@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Service;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -15,62 +16,62 @@ class ServiceSeeder extends Seeder
         //
         $serviceList = [
             [
-                'name' => 'classico',
+                'name' => 'CLASSICO',
                 // 'amount' => '280'
             ],
             [
-                'name' => 'signature',
+                'name' => 'SIGNATURE',
                 // 'amount' => '380'
             ],
             [
-                'name' => 'deluxe',
+                'name' => 'DELUX',
                 // 'amount' => '750'
             ],
             [
-                'name' => 'package1',
+                'name' => 'PACKAGE',
                 // 'amount' => '500'
             ],
             [
-                'name' => 'package2',
+                'name' => 'PACKAGE2',
                 // 'amount' => '850'
             ],
             [
-                'name' => 'package3',
+                'name' => 'PACKAGE3',
                 // 'amount' => '1400'
             ],
             [
-                'name' => 'beard_shave',
+                'name' => 'BEARD SHAVE',
                 // 'amount' => '200'
             ],
             [
-                'name' => 'beard_shaping',
+                'name' => 'BEARD SHAPING',
                 // 'amount' => '200'
             ],
             [
-                'name' => 'beard_sculpting',
+                'name' => 'BEARD SCULPTING',
                 // 'amount' => '200'
             ],
             [
-                'name' => 'mustache',
+                'name' => 'MUSTACHE',
                 // 'amount' => '170'
             ],
             [
-                'name' => 'beard_trim',
+                'name' => 'BEARD TRIM',
                 // 'amount' => '170'
             ],
             [
-                'name' => 'hair_spa',
+                'name' => 'HAIR SPA',
                 // 'amount' => '600'
             ],
             [
-                'name' => 'hair_and_scalp_treatment',
+                'name' => 'HAIR AND SCALP TREATMENT',
                 // 'amount' => '170'
             ],
             [
-                'name' => 'hair_color',
+                'name' => 'HAIR COLOR',
                 // 'amount' => '170'
             ],
-
         ];
+        $services = Service::insert($serviceList);
     }
 }

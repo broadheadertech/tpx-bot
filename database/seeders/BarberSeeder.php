@@ -15,9 +15,21 @@ class BarberSeeder extends Seeder
     {
         //
         $barberList = [
-            ['name' => 'owen'],
-            ['name' => 'jay'],
-            ['name' => 'vince'],
+            [
+                'name' => 'OWEN',
+                'position' => 'barber',
+                'rate' => 0
+            ],
+            [
+                'name' => 'JAY',
+                'position' => 'barber',
+                'rate' => 0
+            ],
+            [
+                'name' => 'VINCE',
+                'position' => 'barber',
+                'rate' => 0
+            ],
         ];
 
         $barbers = Barber::insert($barberList);

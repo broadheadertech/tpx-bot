@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('services', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('name');
-            $table->string('amount');
             $table->softDeletes();
             $table->timestamps();
         });

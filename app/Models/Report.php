@@ -17,6 +17,7 @@ class Report extends Model
         'booking_type',
         'time',
         'date',
+        'amount',
         'mop'
     ];
 

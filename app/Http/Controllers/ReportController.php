@@ -78,10 +78,25 @@ class ReportController extends Controller
 
             $parsed = $this->parseMessage($text);
 
-            $reply = "✅ Parsed:\n";
-            foreach ($parsed as $key => $value) {
-                $reply .= "$key: $value\n";
-            }
+            // Assign variables from the parsed data
+            $customer_no   = $parsed['customer_no'] ?? null;
+            $name          = $parsed['name'] ?? null;
+            $booking_type  = $parsed['booking_type'] ?? null;
+            $time          = $parsed['time'] ?? null;
+            $date          = $parsed['date'] ?? null;
+            $service       = $parsed['service'] ?? null;
+            $amount        = $parsed['amount'] ?? null;
+            $mop           = $parsed['mop'] ?? null;
+
+            $reply = "✅ Booking Info:
+            Customer #: $customer_no
+            Name: $name
+            Type: $booking_type
+            Time: $time
+            Date: $date
+            Service: $service
+            Amount: $amount
+            MOP: $mop";
 
             Telegram::sendMessage([
                 'chat_id' => $chatId,
@@ -98,7 +113,12 @@ class ReportController extends Controller
         foreach ($lines as $line) {
             if (strpos($line, ':') !== false) {
                 [$key, $value] = explode(':', $line, 2);
-                $data[trim($key)] = trim($value);
+
+                // Normalize keys: lowercase, trim, snake_case
+                $normalizedKey = strtolower(trim($key));
+                $normalizedKey = str_replace(' ', '_', $normalizedKey);
+
+                $data[$normalizedKey] = trim($value);
             }
         }
 
