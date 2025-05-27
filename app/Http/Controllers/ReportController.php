@@ -78,6 +78,24 @@ class ReportController extends Controller
             $text = $message->getText();
             $chatId = $message->getChat()->getId();
 
+            if ($text == 'data_final_yes') {
+                Telegram::sendMessage([
+                    'chat_id' => $chatId,
+                    'text' => $text
+                    // 'text' => $reply,
+                    // 'reply_markup' => Keyboard::make([
+                    //     'inline_keyboard' => [
+                    //         [
+                    //             ['text' => '✅ Yes', 'callback_data' => 'data_final_yes'],
+                    //             ['text' => '❌ No', 'callback_data' => 'data_final_no'],
+                    //         ]
+                    //     ]
+                    // ])
+                ]);
+
+                return response('okay');
+            }
+
             $parsed = $this->parseMessage($text);
 
             // Assign variables from the parsed data
