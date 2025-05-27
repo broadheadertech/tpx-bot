@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Report;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Telegram\Bot\Api;
+use Telegram\Bot\Keyboard\Keyboard;
 use Telegram\Bot\Laravel\Facades\Telegram;
 
 class ReportController extends Controller
@@ -93,7 +95,18 @@ class ReportController extends Controller
             Telegram::sendMessage([
                 'chat_id' => $chatId,
                 'text' => $reply,
+                'reply_markup' => Keyboard::make([
+                    'inline_keyboard' => [
+                        [
+                            ['text' => '✅ Yes', 'callback_data' => 'data_final_yes'],
+                            ['text' => '❌ No', 'callback_data' => 'data_final_no'],
+                        ]
+                    ]
+                ])
             ]);
+
+            Cache::put("booking_$chatId", $parsed, 300); // store for 5 minutes
+
         }
     }
 
