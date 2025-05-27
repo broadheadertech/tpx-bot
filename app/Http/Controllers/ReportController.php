@@ -71,135 +71,40 @@ class ReportController extends Controller
 
     public function webhook(Request $request)
     {
-        // $update = Telegram::getWebhookUpdate();
-
-        // if ($update->getMessage()) {
-        //     $message = $update->getMessage();
-        //     $text = $message->getText();
-        //     $chatId = $message->getChat()->getId();
-
-        //     $parsed = $this->parseMessage($text);
-
-        //     // Assign variables from the parsed data
-        //     $customer_no   = $parsed['customer_no'] ?? null;
-        //     $name          = $parsed['name'] ?? null;
-        //     $booking_type  = $parsed['booking_type'] ?? null;
-        //     $time          = $parsed['time'] ?? null;
-        //     $date          = $parsed['date'] ?? null;
-        //     $service       = $parsed['service'] ?? null;
-        //     $amount        = $parsed['amount'] ?? null;
-        //     $mop           = $parsed['mop'] ?? null;
-
-        //     $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
-
-        //     Telegram::sendMessage([
-        //         'chat_id' => $chatId,
-        //         'text' => $reply,
-        //         'reply_markup' => Keyboard::make([
-        //             'inline_keyboard' => [
-        //                 [
-        //                     ['text' => '✅ Yes', 'callback_data' => 'data_final_yes'],
-        //                     ['text' => '❌ No', 'callback_data' => 'data_final_no'],
-        //                 ]
-        //             ]
-        //         ])
-        //     ]); // store for 5 minutes
-
-        // }
-
         $update = Telegram::getWebhookUpdate();
 
         if ($update->getMessage()) {
-            $this->handleTextMessage($update->getMessage());
-        } elseif ($update->getCallbackQuery()) {
-            $this->handleCallbackQuery($update->getCallbackQuery());
-        }
+            $message = $update->getMessage();
+            $text = $message->getText();
+            $chatId = $message->getChat()->getId();
 
-        return response('ok', 200);
-    }
+            $parsed = $this->parseMessage($text);
 
-    private function handleTextMessage($message)
-    {
-        $text = $message->getText();
-        $chatId = $message->getChat()->getId();
+            // Assign variables from the parsed data
+            $customer_no   = $parsed['customer_no'] ?? null;
+            $name          = $parsed['name'] ?? null;
+            $booking_type  = $parsed['booking_type'] ?? null;
+            $time          = $parsed['time'] ?? null;
+            $date          = $parsed['date'] ?? null;
+            $service       = $parsed['service'] ?? null;
+            $amount        = $parsed['amount'] ?? null;
+            $mop           = $parsed['mop'] ?? null;
 
-        $parsed = $this->parseMessage($text);
-
-        $customer_no   = $parsed['customer_no'] ?? null;
-        $name          = $parsed['name'] ?? null;
-        $booking_type  = $parsed['booking_type'] ?? null;
-        $time          = $parsed['time'] ?? null;
-        $date          = $parsed['date'] ?? null;
-        $service       = $parsed['service'] ?? null;
-        $amount        = $parsed['amount'] ?? null;
-        $mop           = $parsed['mop'] ?? null;
-
-        $reply = "✅ Booking Info:\n"
-            . "Customer #: $customer_no\n"
-            . "Name: $name\n"
-            . "Type: $booking_type\n"
-            . "Time: $time\n"
-            . "Date: $date\n"
-            . "Service: $service\n"
-            . "Amount: $amount\n"
-            . "MOP: $mop";
-
-        Telegram::sendMessage([
-            'chat_id' => $chatId,
-            'text' => $reply,
-        ]);
-
-        Cache::put("booking_$chatId", $parsed, 300); // Store for 5 minutes
-
-        Telegram::sendMessage([
-            'chat_id' => $chatId,
-            'text' => 'Is the data final?',
-            'reply_markup' => Keyboard::make([
-                'inline_keyboard' => [
-                    [
-                        ['text' => '✅ Yes', 'callback_data' => 'data_final_yes'],
-                        ['text' => '❌ No', 'callback_data' => 'data_final_no'],
-                    ]
-                ]
-            ])
-        ]);
-    }
-
-    private function handleCallbackQuery($callback)
-    {
-        $chatId = $callback->getMessage()->getChat()->getId();
-        $data = $callback->getData();
-
-        if ($data === 'data_final_yes') {
-            $booking = Cache::get("booking_$chatId");
-
-            if ($booking) {
-                // TODO: Save to DB or other processing
-                Telegram::answerCallbackQuery([
-                    'callback_query_id' => $callback->getId(),
-                    'text' => 'Booking confirmed! ✅',
-                ]);
-
-                Telegram::sendMessage([
-                    'chat_id' => $chatId,
-                    'text' => 'Your booking has been confirmed and saved! 📦',
-                ]);
-            } else {
-                Telegram::sendMessage([
-                    'chat_id' => $chatId,
-                    'text' => 'No booking data found. Please try again.',
-                ]);
-            }
-        } elseif ($data === 'data_final_no') {
-            Telegram::answerCallbackQuery([
-                'callback_query_id' => $callback->getId(),
-                'text' => 'Booking canceled. ❌',
-            ]);
+            $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
 
             Telegram::sendMessage([
                 'chat_id' => $chatId,
-                'text' => 'Please resend the booking info.',
-            ]);
+                'text' => $reply,
+                'reply_markup' => Keyboard::make([
+                    'inline_keyboard' => [
+                        [
+                            ['text' => '✅ Yes', 'callback_data' => 'data_final_yes'],
+                            ['text' => '❌ No', 'callback_data' => 'data_final_no'],
+                        ]
+                    ]
+                ])
+            ]); // store for 5 minutes
+
         }
     }
 
