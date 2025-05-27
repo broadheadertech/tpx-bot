@@ -83,6 +83,17 @@ class ReportController extends Controller
                     // TODO: Save to DB here if needed
                     // Booking::create($booking);
 
+                    $customer_no   = $booking['customer_no'] ?? null;
+                    $name          = $booking['name'] ?? null;
+                    $booking_type  = $booking['booking_type'] ?? null;
+                    $time          = $booking['time'] ?? null;
+                    $date          = $booking['date'] ?? null;
+                    $service       = $booking['service'] ?? null;
+                    $amount        = $booking['amount'] ?? null;
+                    $mop           = $booking['mop'] ?? null;
+
+                    Report::create();
+
                     Telegram::answerCallbackQuery([
                         'callback_query_id' => $callback->getId(),
                         'text' => 'Booking confirmed!',
@@ -124,6 +135,7 @@ class ReportController extends Controller
             // Assign variables from the parsed data
             $customer_no   = $parsed['customer_no'] ?? null;
             $name          = $parsed['name'] ?? null;
+            $barber        =$parsed['barber'] ?? null;
             $booking_type  = $parsed['booking_type'] ?? null;
             $time          = $parsed['time'] ?? null;
             $date          = $parsed['date'] ?? null;
