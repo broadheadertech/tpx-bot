@@ -73,6 +73,7 @@ class ReportController extends Controller
     {
         $update = Telegram::getWebhookUpdate();
 
+        return $update->getMessage();
         if ($update->getMessage()) {
             $message = $update->getMessage();
             $text = $message->getText();
