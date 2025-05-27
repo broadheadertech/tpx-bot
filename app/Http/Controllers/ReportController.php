@@ -89,7 +89,8 @@ class ReportController extends Controller
                 if ($booking) {
 
                     // $barberDetail = Barber::where('name', strtoupper($booking['barber']))->first();
-                    Log::info('Retrieved booking from cache:', ['chat_id' => $chatId, 'booking' => $booking['barber']]);
+                    $customerNo   = $booking['customer_no'] ?? null;
+                    Log::info('Retrieved booking from cache:', ['chat_id' => $chatId, 'booking' => $customerNo]);
 
                     // $serviceDetail = Service::where('name', strtoupper($barber))->first();
                     // Report::create(
