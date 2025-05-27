@@ -73,7 +73,6 @@ class ReportController extends Controller
     {
         $update = Telegram::getWebhookUpdate();
 
-        return $update->getMessage();
         if ($update->getMessage()) {
             $message = $update->getMessage();
             $text = $message->getText();
@@ -105,8 +104,15 @@ class ReportController extends Controller
                     ]
                 ])
             ]);
-
-
+        }
+        if ($callback = $update->getCallbackQuery()) {
+            $chatId = $callback->getMessage()->getChat()->getId();
+            $data = $callback->getData();
+            // $chatId = $message->getChat()->getId();
+            Telegram::sendMessage([
+                'chat_id' => $chatId,
+                'text' => $data,
+            ]);
         }
     }
 
