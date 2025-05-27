@@ -105,6 +105,46 @@ class ReportController extends Controller
                 ])
             ]);
 
+            if ($callback = $update->getCallbackQuery()) {
+                $chatId = $callback->getMessage()->getChat()->getId();
+                $data = $callback->getData();
+
+                if ($data === 'data_final_yes') {
+                    $booking = Cache::pull("booking_$chatId");
+
+                    if ($booking) {
+                        // ✅ Save booking to database or process it
+                        // Booking::create($booking);
+
+                        Telegram::answerCallbackQuery([
+                            'callback_query_id' => $callback->getId(),
+                            'text' => 'Booking confirmed!',
+                        ]);
+
+                        Telegram::sendMessage([
+                            'chat_id' => $chatId,
+                            'text' => '✅ Your booking has been saved!',
+                        ]);
+                    } else {
+                        Telegram::sendMessage([
+                            'chat_id' => $chatId,
+                            'text' => '⚠️ No booking data found. Please try again.',
+                        ]);
+                    }
+                } elseif ($data === 'data_final_no') {
+                    Cache::forget("booking_$chatId");
+
+                    Telegram::answerCallbackQuery([
+                        'callback_query_id' => $callback->getId(),
+                        'text' => 'Booking cancelled.',
+                    ]);
+
+                    Telegram::sendMessage([
+                        'chat_id' => $chatId,
+                        'text' => '❌ Booking cancelled. Please resend the info.',
+                    ]);
+                }
+            }
         }
     }
 
