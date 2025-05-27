@@ -73,14 +73,14 @@ class ReportController extends Controller
     {
         $update = Telegram::getWebhookUpdate();
 
-        if ($update->getMessage()) {
-            $message = $update->getMessage();
+        // Handle text message
+        if ($message = $update->getMessage()) {
             $text = $message->getText();
             $chatId = $message->getChat()->getId();
 
             $parsed = $this->parseMessage($text);
 
-            // Assign variables from the parsed data
+            // Extract variables
             $customer_no   = $parsed['customer_no'] ?? null;
             $name          = $parsed['name'] ?? null;
             $booking_type  = $parsed['booking_type'] ?? null;
@@ -90,11 +90,29 @@ class ReportController extends Controller
             $amount        = $parsed['amount'] ?? null;
             $mop           = $parsed['mop'] ?? null;
 
-            $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
+            // Format reply
+            $reply = "✅ Booking Info:\n"
+                . "Customer #: $customer_no\n"
+                . "Name: $name\n"
+                . "Type: $booking_type\n"
+                . "Time: $time\n"
+                . "Date: $date\n"
+                . "Service: $service\n"
+                . "Amount: $amount\n"
+                . "MOP: $mop";
 
             Telegram::sendMessage([
                 'chat_id' => $chatId,
                 'text' => $reply,
+            ]);
+
+            // ✅ Save temporarily using Laravel cache
+            Cache::put("booking_$chatId", $parsed, 300); // store for 5 minutes
+
+            // Ask for confirmation
+            Telegram::sendMessage([
+                'chat_id' => $chatId,
+                'text' => 'Is the data final?',
                 'reply_markup' => Keyboard::make([
                     'inline_keyboard' => [
                         [
@@ -104,10 +122,48 @@ class ReportController extends Controller
                     ]
                 ])
             ]);
-
-            Cache::put("booking_$chatId", $parsed, 300); // store for 5 minutes
-
         }
+
+        // Handle button response (callback query)
+        if ($callback = $update->getCallbackQuery()) {
+            $chatId = $callback->getMessage()->getChat()->getId();
+            $data = $callback->getData();
+
+            if ($data === 'data_final_yes') {
+                $booking = Cache::get("booking_$chatId");
+
+                if ($booking) {
+                    // ✅ TODO: save $booking to DB or process it here
+
+                    Telegram::answerCallbackQuery([
+                        'callback_query_id' => $callback->getId(),
+                        'text' => 'Booking confirmed! ✅',
+                    ]);
+
+                    Telegram::sendMessage([
+                        'chat_id' => $chatId,
+                        'text' => 'Your booking has been confirmed and saved! 📦',
+                    ]);
+                } else {
+                    Telegram::sendMessage([
+                        'chat_id' => $chatId,
+                        'text' => 'No booking data found. Please try again.',
+                    ]);
+                }
+            } elseif ($data === 'data_final_no') {
+                Telegram::answerCallbackQuery([
+                    'callback_query_id' => $callback->getId(),
+                    'text' => 'Booking canceled. ❌',
+                ]);
+
+                Telegram::sendMessage([
+                    'chat_id' => $chatId,
+                    'text' => 'Please resend the booking info.',
+                ]);
+            }
+        }
+
+        return response('ok', 200);
     }
 
     private function parseMessage(string $text): array
