@@ -81,37 +81,37 @@ class ReportController extends Controller
             if ($data === 'data_final_yes') {
                 $booking = Cache::pull("booking_$chatId");
 
-                 Telegram::sendMessage([
-                        'chat_id' => $chatId,
-                        'text' => $booking,
-                    ]);
+                //  Telegram::sendMessage([
+                //         'chat_id' => $chatId,
+                //         'text' => $booking,
+                //     ]);
                 if ($booking) {
 
-                    $customer_no   = $booking['customer_no'] ?? null;
-                    $name          = $booking['name'] ?? null;
-                    $barber          = $booking['barber'] ?? null;
-                    $booking_type  = $booking['booking_type'] ?? null;
-                    $time          = $booking['time'] ?? null;
-                    $date          = $booking['date'] ?? null;
-                    $service       = $booking['service'] ?? null;
-                    $amount        = $booking['amount'] ?? null;
-                    $mop           = $booking['mop'] ?? null;
+                    // $customer_no   = $booking['customer_no'] ?? null;
+                    // $name          = $booking['name'] ?? null;
+                    // $barber          = $booking['barber'] ?? null;
+                    // $booking_type  = $booking['booking_type'] ?? null;
+                    // $time          = $booking['time'] ?? null;
+                    // $date          = $booking['date'] ?? null;
+                    // $service       = $booking['service'] ?? null;
+                    // $amount        = $booking['amount'] ?? null;
+                    // $mop           = $booking['mop'] ?? null;
 
-                    $barberDetail = Barber::where('name', strtoupper($barber))->first();
-                    $serviceDetail = Service::where('name', strtoupper($barber))->first();
-                    Report::create(
-                        [
-                            'barber_id' => $barberDetail->id,
-                            'service_id' => $serviceDetail->id,
-                            'customer_no' => $customer_no,
-                            'booking_type' => $booking_type,
-                            'name' => $name,
-                            'time' => $time,
-                            'date' => $date,
-                            'amount' => $amount,
-                            'mop' => $mop
-                        ]
-                    );
+                    // $barberDetail = Barber::where('name', strtoupper($barber))->first();
+                    // $serviceDetail = Service::where('name', strtoupper($barber))->first();
+                    // Report::create(
+                    //     [
+                    //         'barber_id' => $barberDetail->id,
+                    //         'service_id' => $serviceDetail->id,
+                    //         'customer_no' => $customer_no,
+                    //         'booking_type' => $booking_type,
+                    //         'name' => $name,
+                    //         'time' => $time,
+                    //         'date' => $date,
+                    //         'amount' => $amount,
+                    //         'mop' => $mop
+                    //     ]
+                    // );
 
                     Telegram::answerCallbackQuery([
                         'callback_query_id' => $callback->getId(),
