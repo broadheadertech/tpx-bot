@@ -131,7 +131,7 @@ class ReportController extends Controller
             $amount        = $parsed['amount'] ?? null;
             $mop           = $parsed['mop'] ?? null;
 
-            // Cache::put("booking_$chatId", $parsed, 300);
+            Cache::put("booking_$chatId", $parsed, 300);
 
             $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
 
