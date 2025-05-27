@@ -73,8 +73,8 @@ class ReportController extends Controller
     {
         $update = Telegram::getWebhookUpdate();
 
-        // Handle text message
-        if ($message = $update->getMessage()) {
+        if ($update->getMessage()) {
+            $message = $update->getMessage();
             $text = $message->getText();
             $chatId = $message->getChat()->getId();
 
@@ -90,7 +90,6 @@ class ReportController extends Controller
             $amount        = $parsed['amount'] ?? null;
             $mop           = $parsed['mop'] ?? null;
 
-            // Format reply
             $reply = "✅ Booking Info:\n"
                 . "Customer #: $customer_no\n"
                 . "Name: $name\n"
@@ -106,10 +105,8 @@ class ReportController extends Controller
                 'text' => $reply,
             ]);
 
-            // ✅ Save temporarily using Laravel cache
-            Cache::put("booking_$chatId", $parsed, 300); // store for 5 minutes
+            Cache::put("booking_$chatId", $parsed, 300);
 
-            // Ask for confirmation
             Telegram::sendMessage([
                 'chat_id' => $chatId,
                 'text' => 'Is the data final?',
@@ -122,10 +119,8 @@ class ReportController extends Controller
                     ]
                 ])
             ]);
-        }
-
-        // Handle button response (callback query)
-        if ($callback = $update->getCallbackQuery()) {
+        } elseif ($update->getCallbackQuery()) {
+            $callback = $update->getCallbackQuery();
             $chatId = $callback->getMessage()->getChat()->getId();
             $data = $callback->getData();
 
@@ -133,7 +128,7 @@ class ReportController extends Controller
                 $booking = Cache::get("booking_$chatId");
 
                 if ($booking) {
-                    // ✅ TODO: save $booking to DB or process it here
+                    // Save to DB here if needed
 
                     Telegram::answerCallbackQuery([
                         'callback_query_id' => $callback->getId(),
