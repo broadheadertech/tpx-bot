@@ -8,6 +8,7 @@ use App\Models\Barber;
 use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Telegram\Bot\Api;
 use Telegram\Bot\Keyboard\Keyboard;
 use Telegram\Bot\Laravel\Facades\Telegram;
@@ -80,6 +81,7 @@ class ReportController extends Controller
 
             if ($data === 'data_final_yes') {
                 $booking = Cache::pull("booking_$chatId");
+                Log::info('Retrieved booking from cache:', ['chat_id' => $chatId, 'booking' => $booking]);
 
                 //  Telegram::sendMessage([
                 //         'chat_id' => $chatId,
