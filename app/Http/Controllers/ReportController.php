@@ -73,81 +73,24 @@ class ReportController extends Controller
     {
         $update = Telegram::getWebhookUpdate();
 
-        // 1. Handle Callback Query first (button press)
-        if ($callback = $update->getCallbackQuery()) {
-            $chatId = $callback->getMessage()->getChat()->getId();
-            $data = $callback->getData();
-
-            if ($data === 'data_final_yes') {
-                $booking = Cache::pull("booking_$chatId");
-
-                if ($booking) {
-                    // TODO: Save to DB here if needed
-                    // Booking::create($booking);
-
-                    Telegram::answerCallbackQuery([
-                        'callback_query_id' => $callback->getId(),
-                        'text' => 'Booking confirmed!',
-                    ]);
-
-                    Telegram::sendMessage([
-                        'chat_id' => $chatId,
-                        'text' => '✅ Your booking has been saved!',
-                    ]);
-                } else {
-                    Telegram::answerCallbackQuery([
-                        'callback_query_id' => $callback->getId(),
-                        'text' => 'No booking data found.',
-                    ]);
-                }
-            } elseif ($data === 'data_final_no') {
-                Cache::forget("booking_$chatId");
-
-                Telegram::answerCallbackQuery([
-                    'callback_query_id' => $callback->getId(),
-                    'text' => 'Booking cancelled.',
-                ]);
-
-                Telegram::sendMessage([
-                    'chat_id' => $chatId,
-                    'text' => '❌ Booking cancelled. Please resend the booking info.',
-                ]);
-            }
-
-            // ✅ Stop further execution
-            return response('ok', 200);
-        }
-
-        // 2. Handle incoming message
-        if ($message = $update->getMessage()) {
+        if ($update->getMessage()) {
+            $message = $update->getMessage();
             $text = $message->getText();
             $chatId = $message->getChat()->getId();
 
-            // Parse booking info
             $parsed = $this->parseMessage($text);
 
-            if (!$parsed) {
-                Telegram::sendMessage([
-                    'chat_id' => $chatId,
-                    'text' => '⚠️ Could not parse booking info. Please check your format.',
-                ]);
-                return response('ok', 200);
-            }
+            // Assign variables from the parsed data
+            $customer_no   = $parsed['customer_no'] ?? null;
+            $name          = $parsed['name'] ?? null;
+            $booking_type  = $parsed['booking_type'] ?? null;
+            $time          = $parsed['time'] ?? null;
+            $date          = $parsed['date'] ?? null;
+            $service       = $parsed['service'] ?? null;
+            $amount        = $parsed['amount'] ?? null;
+            $mop           = $parsed['mop'] ?? null;
 
-            // Save to cache
-            Cache::put("booking_$chatId", $parsed, 300);
-
-            // Prepare variables
-            $reply = "✅ Booking Info:\n"
-                . "Customer #: {$parsed['customer_no']}\n"
-                . "Name: {$parsed['name']}\n"
-                . "Type: {$parsed['booking_type']}\n"
-                . "Time: {$parsed['time']}\n"
-                . "Date: {$parsed['date']}\n"
-                . "Service: {$parsed['service']}\n"
-                . "Amount: {$parsed['amount']}\n"
-                . "MOP: {$parsed['mop']}\n\n"
-                . "Is the data final?";
+            $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
 
             Telegram::sendMessage([
                 'chat_id' => $chatId,
@@ -161,9 +104,9 @@ class ReportController extends Controller
                     ]
                 ])
             ]);
-        }
 
-        return response('ok', 200); // ✅ Always return 200 OK once
+
+        }
     }
 
     private function parseMessage(string $text): array
