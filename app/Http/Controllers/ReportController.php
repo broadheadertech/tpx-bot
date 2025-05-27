@@ -88,15 +88,7 @@ class ReportController extends Controller
             $amount        = $parsed['amount'] ?? null;
             $mop           = $parsed['mop'] ?? null;
 
-            $reply = "✅ Booking Info:
-            Customer #: $customer_no
-            Name: $name
-            Type: $booking_type
-            Time: $time
-            Date: $date
-            Service: $service
-            Amount: $amount
-            MOP: $mop";
+            $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
 
             Telegram::sendMessage([
                 'chat_id' => $chatId,
