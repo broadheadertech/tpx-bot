@@ -75,10 +75,45 @@ class ReportController extends Controller
         if ($callback = $update->getCallbackQuery()) {
             $chatId = $callback->getMessage()->getChat()->getId();
             $data = $callback->getData();
-            Telegram::sendMessage([
-                'chat_id' => $chatId,
-                'text' => $data,
-            ]);
+
+            if ($data === 'data_final_yes') {
+                $booking = Cache::pull("booking_$chatId");
+
+                if ($booking) {
+                    // TODO: Save to DB here if needed
+                    // Booking::create($booking);
+
+                    Telegram::answerCallbackQuery([
+                        'callback_query_id' => $callback->getId(),
+                        'text' => 'Booking confirmed!',
+                    ]);
+
+                    Telegram::sendMessage([
+                        'chat_id' => $chatId,
+                        'text' => '✅ Your booking has been saved!',
+                    ]);
+                } else {
+                    Telegram::answerCallbackQuery([
+                        'callback_query_id' => $callback->getId(),
+                        'text' => 'No booking data found.',
+                    ]);
+                }
+            } elseif ($data === 'data_final_no') {
+                Cache::forget("booking_$chatId");
+
+                Telegram::answerCallbackQuery([
+                    'callback_query_id' => $callback->getId(),
+                    'text' => 'Booking cancelled.',
+                ]);
+
+                Telegram::sendMessage([
+                    'chat_id' => $chatId,
+                    'text' => '❌ Booking cancelled. Please resend the booking info.',
+                ]);
+            }
+
+            // ✅ Stop further execution
+            return response('ok', 200);
         } elseif ($update->getMessage()) {
             $message = $update->getMessage();
             $text = $message->getText();
