@@ -81,7 +81,6 @@ class ReportController extends Controller
 
             if ($data === 'data_final_yes') {
                 $booking = Cache::pull("booking_$chatId");
-                Log::info('Retrieved booking from cache:', ['chat_id' => $chatId, 'booking' => $booking]);
 
                 //  Telegram::sendMessage([
                 //         'chat_id' => $chatId,
@@ -89,17 +88,9 @@ class ReportController extends Controller
                 //     ]);
                 if ($booking) {
 
-                    // $customer_no   = $booking['customer_no'] ?? null;
-                    // $name          = $booking['name'] ?? null;
-                    // $barber          = $booking['barber'] ?? null;
-                    // $booking_type  = $booking['booking_type'] ?? null;
-                    // $time          = $booking['time'] ?? null;
-                    // $date          = $booking['date'] ?? null;
-                    // $service       = $booking['service'] ?? null;
-                    // $amount        = $booking['amount'] ?? null;
-                    // $mop           = $booking['mop'] ?? null;
+                    $barberDetail = Barber::where('name', strtoupper($booking['barber']))->first();
+                    Log::info('Retrieved booking from cache:', ['chat_id' => $chatId, 'booking' => $barberDetail->id]);
 
-                    // $barberDetail = Barber::where('name', strtoupper($barber))->first();
                     // $serviceDetail = Service::where('name', strtoupper($barber))->first();
                     // Report::create(
                     //     [
