@@ -71,13 +71,76 @@ class ReportController extends Controller
 
     public function webhook(Request $request)
     {
+        // $update = Telegram::getWebhookUpdate();
+
+        // if ($update->getMessage()) {
+        //     $message = $update->getMessage();
+        //     $text = $message->getText();
+        //     $chatId = $message->getChat()->getId();
+
+        //     $parsed = $this->parseMessage($text);
+
+        //     // Assign variables from the parsed data
+        //     $customer_no   = $parsed['customer_no'] ?? null;
+        //     $name          = $parsed['name'] ?? null;
+        //     $booking_type  = $parsed['booking_type'] ?? null;
+        //     $time          = $parsed['time'] ?? null;
+        //     $date          = $parsed['date'] ?? null;
+        //     $service       = $parsed['service'] ?? null;
+        //     $amount        = $parsed['amount'] ?? null;
+        //     $mop           = $parsed['mop'] ?? null;
+
+        //     $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
+
+        //     Telegram::sendMessage([
+        //         'chat_id' => $chatId,
+        //         'text' => $reply,
+        //         'reply_markup' => Keyboard::make([
+        //             'inline_keyboard' => [
+        //                 [
+        //                     ['text' => '✅ Yes', 'callback_data' => 'data_final_yes'],
+        //                     ['text' => '❌ No', 'callback_data' => 'data_final_no'],
+        //                 ]
+        //             ]
+        //         ])
+        //     ]);
+
+        // }
+
         $update = Telegram::getWebhookUpdate();
 
         if ($update->getMessage()) {
             $message = $update->getMessage();
-            $text = $message->getText();
+            $text = trim(strtoupper($message->getText()));
             $chatId = $message->getChat()->getId();
 
+            // Check if we're waiting for confirmation
+            if (Cache::has("booking_$chatId")) {
+                if ($text === 'YES') {
+                    $booking = Cache::pull("booking_$chatId");
+
+                    // TODO: Save $booking to DB if needed
+                    // Booking::create($booking);
+
+                    Telegram::sendMessage([
+                        'chat_id' => $chatId,
+                        'text' => '✅ Booking has been confirmed and saved!',
+                        'reply_markup' => Keyboard::remove(),
+                    ]);
+                    return;
+                } elseif ($text === 'NO') {
+                    Cache::forget("booking_$chatId");
+
+                    Telegram::sendMessage([
+                        'chat_id' => $chatId,
+                        'text' => '❌ Booking canceled. Please resend the booking info.',
+                        'reply_markup' => Keyboard::remove(),
+                    ]);
+                    return;
+                }
+            }
+
+            // Parse new booking data
             $parsed = $this->parseMessage($text);
 
             // Assign variables from the parsed data
@@ -90,21 +153,30 @@ class ReportController extends Controller
             $amount        = $parsed['amount'] ?? null;
             $mop           = $parsed['mop'] ?? null;
 
-            $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
+            $reply = "✅ Booking Info:\n"
+                . "Customer #: $customer_no\n"
+                . "Name: $name\n"
+                . "Type: $booking_type\n"
+                . "Time: $time\n"
+                . "Date: $date\n"
+                . "Service: $service\n"
+                . "Amount: $amount\n"
+                . "MOP: $mop\n\n"
+                . "Is the data final? Reply with YES or NO.";
 
+            // Cache the booking info
+            Cache::put("booking_$chatId", $parsed, 300); // Cache for 5 minutes
+
+            // Show reply keyboard
             Telegram::sendMessage([
                 'chat_id' => $chatId,
                 'text' => $reply,
                 'reply_markup' => Keyboard::make([
-                    'inline_keyboard' => [
-                        [
-                            ['text' => '✅ Yes', 'callback_data' => 'data_final_yes'],
-                            ['text' => '❌ No', 'callback_data' => 'data_final_no'],
-                        ]
-                    ]
+                    'keyboard' => [['YES', 'NO']],
+                    'resize_keyboard' => true,
+                    'one_time_keyboard' => true,
                 ])
-            ]); // store for 5 minutes
-
+            ]);
         }
     }
 
