@@ -6,6 +6,7 @@ use App\Models\Report;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Telegram\Bot\Api;
+use Telegram\Bot\Laravel\Facades\Telegram;
 
 class ReportController extends Controller
 {
@@ -68,31 +69,25 @@ class ReportController extends Controller
 
     public function webhook(Request $request)
     {
-        $telegram = new Api();
-        $update = $telegram->getWebhookUpdate();
-        $message = $update->getMessage();
+        $update = Telegram::getWebhookUpdate();
 
-        if (!$message) {
-            return response('no message', 200);
+        if ($update->getMessage()) {
+            $message = $update->getMessage();
+            $text = $message->getText();
+            $chatId = $message->getChat()->getId();
+
+            $parsed = $this->parseMessage($text);
+
+            $reply = "✅ Parsed:\n";
+            foreach ($parsed as $key => $value) {
+                $reply .= "$key: $value\n";
+            }
+
+            Telegram::sendMessage([
+                'chat_id' => $chatId,
+                'text' => $reply,
+            ]);
         }
-
-        $text = $message->getText();
-        $chatId = $message->getChat()->getId();
-
-        $parsed = $this->parseMessage($text);
-
-        $reply = "✅ Parsed:\n";
-        foreach ($parsed as $key => $value) {
-            $reply .= "$key: $value\n";
-        }
-
-        // Respond back to user
-        $telegram->sendMessage([
-            'chat_id' => $chatId,
-            'text' => $reply,
-        ]);
-
-        return response('ok', 200);
     }
 
     private function parseMessage(string $text): array
