@@ -72,27 +72,32 @@ class ReportController extends Controller
     public function webhook(Request $request)
     {
         $update = Telegram::getWebhookUpdate();
-
-        if ($update->getMessage()) {
+        if ($callback = $update->getCallbackQuery()) {
+            $chatId = $callback->getMessage()->getChat()->getId();
+            $data = $callback->getData();
+            Telegram::sendMessage([
+                'chat_id' => $chatId,
+                'text' => $data,
+            ]);
+        } elseif ($update->getMessage()) {
             $message = $update->getMessage();
             $text = $message->getText();
             $chatId = $message->getChat()->getId();
 
-            if($text == 'data_final_yes')
-            {
+            if ($text == 'data_final_yes') {
                 Telegram::sendMessage([
-                'chat_id' => $chatId,
-                'text' => 'okay'
-                // 'text' => $reply,
-                // 'reply_markup' => Keyboard::make([
-                //     'inline_keyboard' => [
-                //         [
-                //             ['text' => '✅ Yes', 'callback_data' => 'data_final_yes'],
-                //             ['text' => '❌ No', 'callback_data' => 'data_final_no'],
-                //         ]
-                //     ]
-                // ])
-            ]);
+                    'chat_id' => $chatId,
+                    'text' => 'okay'
+                    // 'text' => $reply,
+                    // 'reply_markup' => Keyboard::make([
+                    //     'inline_keyboard' => [
+                    //         [
+                    //             ['text' => '✅ Yes', 'callback_data' => 'data_final_yes'],
+                    //             ['text' => '❌ No', 'callback_data' => 'data_final_no'],
+                    //         ]
+                    //     ]
+                    // ])
+                ]);
             }
 
             Telegram::sendMessage([
@@ -136,15 +141,6 @@ class ReportController extends Controller
                         ]
                     ]
                 ])
-            ]);
-        }
-        if ($callback = $update->getCallbackQuery()) {
-            $chatId = $callback->getMessage()->getChat()->getId();
-            $data = $callback->getData();
-            // $chatId = $message->getChat()->getId();
-            Telegram::sendMessage([
-                'chat_id' => $chatId,
-                'text' => $data,
             ]);
         }
     }
