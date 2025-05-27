@@ -81,9 +81,11 @@ class ReportController extends Controller
             if ($data === 'data_final_yes') {
                 $booking = Cache::pull("booking_$chatId");
 
+                 Telegram::sendMessage([
+                        'chat_id' => $chatId,
+                        'text' => $booking,
+                    ]);
                 if ($booking) {
-                    // TODO: Save to DB here if needed
-                    // Booking::create($booking);
 
                     $customer_no   = $booking['customer_no'] ?? null;
                     $name          = $booking['name'] ?? null;
