@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Report;
 use App\Http\Controllers\Controller;
+use App\Models\Barber;
+use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Telegram\Bot\Api;
@@ -85,6 +87,7 @@ class ReportController extends Controller
 
                     $customer_no   = $booking['customer_no'] ?? null;
                     $name          = $booking['name'] ?? null;
+                    $barber          = $booking['barber'] ?? null;
                     $booking_type  = $booking['booking_type'] ?? null;
                     $time          = $booking['time'] ?? null;
                     $date          = $booking['date'] ?? null;
@@ -92,7 +95,21 @@ class ReportController extends Controller
                     $amount        = $booking['amount'] ?? null;
                     $mop           = $booking['mop'] ?? null;
 
-                    Report::create();
+                    $barberDetail = Barber::where('name', strtoupper($barber))->first();
+                    $serviceDetail = Service::where('name', strtoupper($barber))->first();
+                    Report::create(
+                        [
+                            'barber_id' => $barberDetail->id,
+                            'service_id' => $serviceDetail->id,
+                            'customer_no' => $customer_no,
+                            'booking_type' => $booking_type,
+                            'name' => $name,
+                            'time' => $time,
+                            'date' => $date,
+                            'amount' => $amount,
+                            'mop' => $mop
+                        ]
+                    );
 
                     Telegram::answerCallbackQuery([
                         'callback_query_id' => $callback->getId(),
@@ -135,7 +152,7 @@ class ReportController extends Controller
             // Assign variables from the parsed data
             $customer_no   = $parsed['customer_no'] ?? null;
             $name          = $parsed['name'] ?? null;
-            $barber        =$parsed['barber'] ?? null;
+            $barber        = $parsed['barber'] ?? null;
             $booking_type  = $parsed['booking_type'] ?? null;
             $time          = $parsed['time'] ?? null;
             $date          = $parsed['date'] ?? null;
@@ -145,7 +162,7 @@ class ReportController extends Controller
 
             Cache::put("booking_$chatId", $parsed, 300);
 
-            $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
+            $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nBarber: $barber\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
 
             Telegram::sendMessage([
                 'chat_id' => $chatId,

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreign('barber_id')->references('id')->on('barbers')->onDelete('cascade');
             $table->foreign('service_id')->references('id')->on('barbers')->onDelete('cascade');
             $table->string('customer_no');
+            $table->string('name');
             $table->string('booking_type');
             $table->string('time');
             $table->string('date');
