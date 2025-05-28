@@ -8,6 +8,7 @@ use App\Models\AppscriptReport;
 use App\Models\Barber;
 use App\Models\Service;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -163,7 +164,83 @@ class ReportController extends Controller
         return $data;
     }
 
-    public function getWeeklySales() {
-        
+    public function getWeeklySales()
+    {
+        $startOfWeek = Carbon::now()->startOfWeek();
+        $endOfWeek = Carbon::now()->endOfWeek();
+
+        // Get all reports with barber and service
+        $reports = Report::with(['barber', 'service'])->get();
+
+        // Filter reports within current week (based on string dates)
+        $weeklyReports = $reports->filter(function ($report) use ($startOfWeek, $endOfWeek) {
+            try {
+                $parsed = Carbon::createFromFormat('m/d/Y', $report->date);
+                return $parsed->between($startOfWeek, $endOfWeek);
+            } catch (\Exception $e) {
+                return false;
+            }
+        });
+
+        // Group by barber
+        $groupedByBarber = $weeklyReports->groupBy('barber_id');
+
+        $result = [];
+
+        foreach ($groupedByBarber as $barberId => $barberReports) {
+            $barberName = $barberReports->first()->barber->name ?? 'Unknown Barber';
+            $barberRate = $barberReports->first()->barber->rate;
+            $totalSalary = 0;
+            // Group by date (still string format)
+            $groupedByDate = $barberReports->groupBy('date');
+
+            // Sort dates in ascending order
+            $sortedDates = collect($groupedByDate)->sortKeysUsing(function ($a, $b) {
+                $dateA = Carbon::createFromFormat('m/d/Y', $a);
+                $dateB = Carbon::createFromFormat('m/d/Y', $b);
+                return $dateA->lessThan($dateB) ? -1 : 1;
+            });
+
+            $dailyServices = [];
+
+            foreach ($sortedDates as $date => $dailyReports) {
+                $groupedByService = $dailyReports->groupBy('service_id');
+
+                $serviceEntries = [];
+
+
+                foreach ($groupedByService as $serviceId => $serviceReports) {
+                    $serviceName = $serviceReports->first()->service->name ?? 'Unknown Service';
+
+                    $todaysIncentive = $serviceReports->sum('amount') * $serviceReports->first()->service->percentage;
+                    if($barberRate > $todaysIncentive)
+                    {
+                        $todaysIncentive = $barberRate;
+                    }
+                    $serviceEntries[] = [
+                        'name' => $serviceName,
+                        'count' => $serviceReports->count(),
+                        'gross_amount' => $serviceReports->sum('amount'),
+                        'salary_for_the_day' => $todaysIncentive
+                    ];
+                }
+
+                $dailyServices[] = [
+                    'date' => $date,
+                    'entries' => $serviceEntries,
+                ];
+
+                $totalSalary = $totalSalary + $todaysIncentive;
+            }
+
+            $result[] = [
+                'barber' => $barberName,
+                'barber_rate' => $barberRate,
+                'services' => $dailyServices,
+                'total_salary' => $totalSalary,
+            ];
+        }
+
+        return response()->json($result);
     }
 }
