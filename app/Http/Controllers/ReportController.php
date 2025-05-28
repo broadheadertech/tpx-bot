@@ -157,7 +157,7 @@ class ReportController extends Controller
             $barberDetail = Barber::where('name', strtoupper($barber))->first();
             $serviceDetail = Service::where('name', strtoupper($service))->first();
             $slug = Str::random(6);
-            Cache::put($slug, $slug, 300);
+          //  Cache::put($slug, $slug, 300);
             $report = Report::create(
                 [
                     'customer_no' => $customer_no,
