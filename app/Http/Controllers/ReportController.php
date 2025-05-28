@@ -81,11 +81,9 @@ class ReportController extends Controller
             $text = $message->getText();
             $chatId = $message->getChat()->getId();
 
-            if ($text == '✅ Record has been saved!') {
-                return response()->json(
-                    'done',
-                    200
-                );
+            // 👇 Ignore messages sent by the bot itself
+            if ($message->getFrom()->getIsBot()) {
+                return response()->json('Ignored bot message', 200);
             }
 
             $parsed = $this->parseMessage($text);
@@ -100,7 +98,6 @@ class ReportController extends Controller
             $service       = $parsed['service'] ?? null;
             $amount        = $parsed['amount'] ?? null;
             $mop           = $parsed['mop'] ?? null;
-
 
             $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nBarber: $barber\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
 
