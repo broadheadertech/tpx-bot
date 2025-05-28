@@ -85,13 +85,13 @@ class ReportController extends Controller
             $botId = 5325190507; // 🔁 Replace this with your actual bot ID
 
             // ✅ Prevent the bot from replying to itself
-            if ($senderId == $botId) {
-                Telegram::sendMessage([
-                    'chat_id' => $chatId,
-                    'text' => 'Record has been saved!' . $botId . ' ' . $senderId,
-                ]);
-                return;
-            }
+            // if ($senderId == $botId) {
+            //     Telegram::sendMessage([
+            //         'chat_id' => $chatId,
+            //         'text' => 'Record has been saved!' . $botId . ' ' . $senderId,
+            //     ]);
+            //     return;
+            // }
 
             $parsed = $this->parseMessage($text);
 
@@ -110,7 +110,7 @@ class ReportController extends Controller
 
             Telegram::sendMessage([
                 'chat_id' => $chatId,
-                'text' => 'Record has been saved!' . $botId . ' ' . $senderId,
+                    'text' => 'Record has been saved!' . $botId . ' ' . $senderId,
             ]);
 
             $barberDetail = Barber::where('name', strtoupper($barber))->first();
