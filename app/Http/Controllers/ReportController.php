@@ -129,7 +129,7 @@ class ReportController extends Controller
               $report = AppscriptReport::create([
                 'customer_no' => $customer_no,
                 'barber' => $barberDetail->name,
-                'service_id' => $serviceDetail->name,
+                'service' => $serviceDetail->name,
                 'name' => $name,
                 'booking_type' => $booking_type,
                 'time' => $time,
