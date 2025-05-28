@@ -15,6 +15,7 @@ class Report extends Model
         'barber_id',
         'service_id',
         'customer_no',
+        'slug',
         'name',
         'booking_type',
         'time',
