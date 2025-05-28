@@ -88,25 +88,6 @@ class ReportController extends Controller
                 //     ]);
                 if ($booking) {
 
-                    // $barberDetail = Barber::where('name', strtoupper($booking['barber']))->first();
-                    $customerNo   = $booking['customer_no'] ?? null;
-                    Log::info('Retrieved booking from cache:', ['chat_id' => $chatId, 'booking' => $customerNo]);
-
-                    // $serviceDetail = Service::where('name', strtoupper($barber))->first();
-                    // Report::create(
-                    //     [
-                    //         'barber_id' => $barberDetail->id,
-                    //         'service_id' => $serviceDetail->id,
-                    //         'customer_no' => $customer_no,
-                    //         'booking_type' => $booking_type,
-                    //         'name' => $name,
-                    //         'time' => $time,
-                    //         'date' => $date,
-                    //         'amount' => $amount,
-                    //         'mop' => $mop
-                    //     ]
-                    // );
-
                     Telegram::answerCallbackQuery([
                         'callback_query_id' => $callback->getId(),
                         'text' => 'Booking confirmed!',
@@ -160,6 +141,21 @@ class ReportController extends Controller
 
             $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nBarber: $barber\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
 
+            $barberDetail = Barber::where('name', strtoupper($barber))->first();
+            $serviceDetail = Service::where('name', strtoupper($service))->first();
+            $report = Report::create(
+                [
+                    'customer_no' => $customer_no,
+                    'barber_id' => $barberDetail->id,
+                    'service_id' => $serviceDetail->id,
+                    'name' => $name,
+                    'booking_type' => $booking_type,
+                    'time' => $time,
+                    'date' => $date,
+                    'amount' => $amount,
+                    'mop' => $mop
+                ]
+            );
             Telegram::sendMessage([
                 'chat_id' => $chatId,
                 'text' => $reply,

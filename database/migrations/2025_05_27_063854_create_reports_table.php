@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('booking_type');
             $table->string('time');
             $table->string('date');
+            $table->string('amount');
             $table->string('mop');
             $table->softDeletes();
             $table->timestamps();
