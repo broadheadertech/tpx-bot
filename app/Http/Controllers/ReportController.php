@@ -79,11 +79,7 @@ class ReportController extends Controller
         $botInfo = Telegram::getMe();
         $botId = $botInfo->getId();
 
-        if ($callback = $update->getCallbackQuery()) {
-            return response()->json(
-                200
-            );
-        } elseif ($update->getMessage()) {
+       if ($update->getMessage()) {
             $message = $update->getMessage();
             $text = $message->getText();
             $chatId = $message->getChat()->getId();
