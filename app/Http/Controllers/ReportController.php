@@ -76,10 +76,17 @@ class ReportController extends Controller
     public function webhook(Request $request)
     {
         $update = Telegram::getWebhookUpdate();
-       if ($update->getMessage()) {
+        if ($update->getMessage()) {
             $message = $update->getMessage();
             $text = $message->getText();
             $chatId = $message->getChat()->getId();
+
+            if ($text === '✅ Record has been saved!') {
+                return response()->json(
+                    'done',
+                    200
+                );
+            }
 
             $parsed = $this->parseMessage($text);
 
