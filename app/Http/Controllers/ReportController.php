@@ -76,6 +76,9 @@ class ReportController extends Controller
     public function webhook(Request $request)
     {
         $update = Telegram::getWebhookUpdate();
+        $botInfo = Telegram::getMe();
+        $botId = $botInfo->getId();
+
         if ($callback = $update->getCallbackQuery()) {
             return response()->json(
                 200
@@ -104,7 +107,7 @@ class ReportController extends Controller
 
             Telegram::sendMessage([
                 'chat_id' => $chatId,
-                'text' => '✅ Record has been saved!',
+                'text' => '✅ Record has been saved!' . $botId,
             ]);
 
             $barberDetail = Barber::where('name', strtoupper($barber))->first();
