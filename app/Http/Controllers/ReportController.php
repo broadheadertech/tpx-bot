@@ -81,7 +81,7 @@ class ReportController extends Controller
             $text = $message->getText();
             $chatId = $message->getChat()->getId();
 
-            if ($text === '✅ Record has been saved!') {
+            if ($text == '✅ Record has been saved!') {
                 return response()->json(
                     'done',
                     200
