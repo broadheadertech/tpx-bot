@@ -85,9 +85,9 @@ class ReportController extends Controller
             $chatId = $message->getChat()->getId();
 
             $senderId = $message->getFrom()->getId();
-            if ($senderId == '7769572088') {
-                return response()->json('ignored bot', 200);
-            } else {
+            // if ($senderId == 7769572088) {
+            //     return response()->json('ignored bot', 200);
+            // } else {
                 $parsed = $this->parseMessage($text);
 
                 // Assign variables from the parsed data
@@ -105,7 +105,7 @@ class ReportController extends Controller
 
                 Telegram::sendMessage([
                     'chat_id' => $chatId,
-                    'text' => '✅ Record has been saved!',
+                    'text' => 'Record has been saved!',
                 ]);
 
                 $barberDetail = Barber::where('name', strtoupper($barber))->first();
@@ -131,7 +131,7 @@ class ReportController extends Controller
                     'success',
                     200
                 );
-            }
+            // }
         }
     }
 
