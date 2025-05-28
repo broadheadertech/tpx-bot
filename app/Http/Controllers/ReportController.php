@@ -86,6 +86,10 @@ class ReportController extends Controller
 
             // ✅ Prevent the bot from replying to itself
             if ($senderId == $botId) {
+                Telegram::sendMessage([
+                    'chat_id' => $chatId,
+                    'text' => 'Record has been saved!' . $botId . ' ' . $senderId,
+                ]);
                 return;
             }
 
@@ -106,7 +110,7 @@ class ReportController extends Controller
 
             Telegram::sendMessage([
                 'chat_id' => $chatId,
-                'text' => 'Record has been saved!' . $senderId,
+                'text' => 'Record has been saved!' . $botId . ' ' . $senderId,
             ]);
 
             $barberDetail = Barber::where('name', strtoupper($barber))->first();
