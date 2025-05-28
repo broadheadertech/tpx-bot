@@ -76,15 +76,19 @@ class ReportController extends Controller
     public function webhook(Request $request)
     {
         $update = Telegram::getWebhookUpdate();
-        if ($update->getMessage()) {
+        if ($callback = $update->getCallbackQuery())
+        {
+            return response()->json(
+              200
+            );
+        }
+        elseif ($update->getMessage()) {
             $message = $update->getMessage();
             $text = $message->getText();
             $chatId = $message->getChat()->getId();
 
             // 👇 Ignore messages sent by the bot itself
-            if ($message->getFrom()->getIsBot()) {
-                return response()->json('Ignored bot message', 200);
-            }
+
 
             $parsed = $this->parseMessage($text);
 
