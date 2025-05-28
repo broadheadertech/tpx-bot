@@ -76,54 +76,7 @@ class ReportController extends Controller
     public function webhook(Request $request)
     {
         $update = Telegram::getWebhookUpdate();
-        if ($callback = $update->getCallbackQuery()) {
-            $chatId = $callback->getMessage()->getChat()->getId();
-            $data = $callback->getData();
-
-            if ($data === 'data_final_yes') {
-                $booking = Cache::pull("booking_$chatId");
-
-                //  Telegram::sendMessage([
-                //         'chat_id' => $chatId,
-                //         'text' => $booking,
-                //     ]);
-                if ($booking) {
-
-                    Telegram::answerCallbackQuery([
-                        'callback_query_id' => $callback->getId(),
-                        'text' => 'Booking confirmed!',
-                    ]);
-
-                    Telegram::sendMessage([
-                        'chat_id' => $chatId,
-                        'text' => '✅ Your booking has been saved!',
-                    ]);
-
-                    $report = Report::where('slug', $booking->slug)->first();
-                    $report->update();
-                } else {
-                    Telegram::answerCallbackQuery([
-                        'callback_query_id' => $callback->getId(),
-                        'text' => 'No booking data found.',
-                    ]);
-                }
-            } elseif ($data === 'data_final_no') {
-                Cache::forget("booking_$chatId");
-
-                Telegram::answerCallbackQuery([
-                    'callback_query_id' => $callback->getId(),
-                    'text' => 'Booking cancelled.',
-                ]);
-
-                Telegram::sendMessage([
-                    'chat_id' => $chatId,
-                    'text' => '❌ Booking cancelled. Please resend the booking info.',
-                ]);
-            }
-
-            // ✅ Stop further execution
-            return response('ok', 200);
-        } elseif ($update->getMessage()) {
+       if ($update->getMessage()) {
             $message = $update->getMessage();
             $text = $message->getText();
             $chatId = $message->getChat()->getId();
@@ -144,11 +97,6 @@ class ReportController extends Controller
 
             $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nBarber: $barber\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
 
-            // Telegram::answerCallbackQuery([
-            //     'callback_query_id' => $callback->getId(),
-            //     'text' => 'Record confirmed!',
-            // ]);
-
             Telegram::sendMessage([
                 'chat_id' => $chatId,
                 'text' => '✅ Record has been saved!',
@@ -157,7 +105,6 @@ class ReportController extends Controller
             $barberDetail = Barber::where('name', strtoupper($barber))->first();
             $serviceDetail = Service::where('name', strtoupper($service))->first();
             $slug = Str::random(6);
-          //  Cache::put($slug, $slug, 300);
             $report = Report::create(
                 [
                     'customer_no' => $customer_no,
