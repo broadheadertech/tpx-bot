@@ -106,7 +106,7 @@ class ReportController extends Controller
 
             Telegram::sendMessage([
                 'chat_id' => $chatId,
-                'text' => 'Record has been saved!' . $botId,
+                'text' => 'Record has been saved!' . $senderId,
             ]);
 
             $barberDetail = Barber::where('name', strtoupper($barber))->first();
