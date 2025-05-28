@@ -82,7 +82,13 @@ class ReportController extends Controller
 
             if ($data === 'data_final_yes') {
                 $booking = Cache::pull("booking_$chatId");
+
+                //  Telegram::sendMessage([
+                //         'chat_id' => $chatId,
+                //         'text' => $booking,
+                //     ]);
                 if ($booking) {
+
                     Telegram::answerCallbackQuery([
                         'callback_query_id' => $callback->getId(),
                         'text' => 'Booking confirmed!',
@@ -94,11 +100,7 @@ class ReportController extends Controller
                     ]);
 
                     $report = Report::where('slug', $booking->slug)->first();
-                    $report->update(
-                        [
-                            'status' => 'approved'
-                        ]
-                    );
+                    $report->update();
                 } else {
                     Telegram::answerCallbackQuery([
                         'callback_query_id' => $callback->getId(),
@@ -140,20 +142,16 @@ class ReportController extends Controller
             $mop           = $parsed['mop'] ?? null;
 
 
-
             $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nBarber: $barber\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
+
+            Telegram::answerCallbackQuery([
+                'callback_query_id' => $callback->getId(),
+                'text' => 'Record confirmed!',
+            ]);
 
             Telegram::sendMessage([
                 'chat_id' => $chatId,
-                'text' => $reply,
-                'reply_markup' => Keyboard::make([
-                    'inline_keyboard' => [
-                        [
-                            ['text' => '✅ Yes', 'callback_data' => 'data_final_yes'],
-                            ['text' => '❌ No', 'callback_data' => 'data_final_no'],
-                        ]
-                    ]
-                ])
+                'text' => '✅ Record has been saved!',
             ]);
 
             $barberDetail = Barber::where('name', strtoupper($barber))->first();
