@@ -9,6 +9,7 @@ use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Telegram\Bot\Api;
 use Telegram\Bot\Keyboard\Keyboard;
 use Telegram\Bot\Laravel\Facades\Telegram;
@@ -81,13 +82,7 @@ class ReportController extends Controller
 
             if ($data === 'data_final_yes') {
                 $booking = Cache::pull("booking_$chatId");
-
-                //  Telegram::sendMessage([
-                //         'chat_id' => $chatId,
-                //         'text' => $booking,
-                //     ]);
                 if ($booking) {
-
                     Telegram::answerCallbackQuery([
                         'callback_query_id' => $callback->getId(),
                         'text' => 'Booking confirmed!',
@@ -97,6 +92,13 @@ class ReportController extends Controller
                         'chat_id' => $chatId,
                         'text' => '✅ Your booking has been saved!',
                     ]);
+
+                    $report = Report::where('slug', $booking->slug)->first();
+                    $report->update(
+                        [
+                            'status' => 'approved'
+                        ]
+                    );
                 } else {
                     Telegram::answerCallbackQuery([
                         'callback_query_id' => $callback->getId(),
@@ -137,25 +139,10 @@ class ReportController extends Controller
             $amount        = $parsed['amount'] ?? null;
             $mop           = $parsed['mop'] ?? null;
 
-            Cache::put("booking_$chatId", $parsed, 300);
+
 
             $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nBarber: $barber\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
 
-            $barberDetail = Barber::where('name', strtoupper($barber))->first();
-            $serviceDetail = Service::where('name', strtoupper($service))->first();
-            $report = Report::create(
-                [
-                    'customer_no' => $customer_no,
-                    'barber_id' => $barberDetail->id,
-                    'service_id' => $serviceDetail->id,
-                    'name' => $name,
-                    'booking_type' => $booking_type,
-                    'time' => $time,
-                    'date' => $date,
-                    'amount' => $amount,
-                    'mop' => $mop
-                ]
-            );
             Telegram::sendMessage([
                 'chat_id' => $chatId,
                 'text' => $reply,
@@ -168,6 +155,31 @@ class ReportController extends Controller
                     ]
                 ])
             ]);
+
+            $barberDetail = Barber::where('name', strtoupper($barber))->first();
+            $serviceDetail = Service::where('name', strtoupper($service))->first();
+            $slug = Str::random(6);
+            Cache::put($slug, $slug, 300);
+            $report = Report::create(
+                [
+                    'customer_no' => $customer_no,
+                    'barber_id' => $barberDetail->id,
+                    'service_id' => $serviceDetail->id,
+                    'slug' => $slug,
+                    'name' => $name,
+                    'booking_type' => $booking_type,
+                    'time' => $time,
+                    'date' => $date,
+                    'amount' => $amount,
+                    'mop' => $mop
+                ]
+            );
+
+
+            return response()->json(
+                'success',
+                200
+            );
         }
     }
 

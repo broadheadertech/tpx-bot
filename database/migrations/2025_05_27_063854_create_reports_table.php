@@ -16,7 +16,8 @@ return new class extends Migration
             $table->unsignedBigInteger('barber_id');
             $table->unsignedBigInteger(column: 'service_id');
             $table->foreign('barber_id')->references('id')->on('barbers')->onDelete('cascade');
-            $table->foreign('service_id')->references('id')->on('barbers')->onDelete('cascade');
+            $table->foreign('service_id')->references('id')->on('services')->onDelete('cascade');
+            $table->string('slug');
             $table->string('customer_no');
             $table->string('name');
             $table->string('booking_type');

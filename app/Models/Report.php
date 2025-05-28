@@ -11,6 +11,7 @@ class Report extends Model
     use SoftDeletes;
 
     protected $fillable = [
+
         'barber_id',
         'service_id',
         'customer_no',
@@ -19,7 +20,8 @@ class Report extends Model
         'time',
         'date',
         'amount',
-        'mop'
+        'mop',
+        'status'
     ];
 
     public function barber()
