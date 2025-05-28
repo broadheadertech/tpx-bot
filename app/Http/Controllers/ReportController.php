@@ -79,10 +79,15 @@ class ReportController extends Controller
         $botInfo = Telegram::getMe();
         $botId = $botInfo->getId();
 
-       if ($update->getMessage()) {
+        if ($update->getMessage()) {
             $message = $update->getMessage();
             $text = $message->getText();
             $chatId = $message->getChat()->getId();
+
+            $senderId = $message->getFrom()->getId();
+            if ($senderId == '7769572088') {
+                return response()->json('ignored bot', 200);
+            }
 
             // 👇 Ignore messages sent by the bot itself
 
