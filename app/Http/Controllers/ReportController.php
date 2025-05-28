@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Report;
 use App\Http\Controllers\Controller;
+use App\Models\AppscriptReport;
 use App\Models\Barber;
 use App\Models\Service;
 use Illuminate\Http\Request;
@@ -102,21 +103,33 @@ class ReportController extends Controller
             $amount        = $parsed['amount'] ?? null;
             $mop           = $parsed['mop'] ?? null;
 
-            $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nBarber: $barber\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
+            $reply = "✅ Record Info:\nCustomer #: $customer_no\nName: $name\nBarber: $barber\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop \n \n '✅ Record has been saved!";
 
             Telegram::sendMessage([
                 'chat_id' => $chatId,
-                    'text' => 'Record has been saved!',
+                    'text' => $reply,
             ]);
 
             $barberDetail = Barber::where('name', strtoupper($barber))->first();
             $serviceDetail = Service::where('name', strtoupper($service))->first();
             $slug = Str::random(6);
-            $report = Report::create([
+            // $report = Report::create([
+            //     'customer_no' => $customer_no,
+            //     'barber_id' => $barberDetail->id,
+            //     'service_id' => $serviceDetail->id,
+            //     'slug' => $slug,
+            //     'name' => $name,
+            //     'booking_type' => $booking_type,
+            //     'time' => $time,
+            //     'date' => $date,
+            //     'amount' => $amount,
+            //     'mop' => $mop
+            // ]);
+
+              $report = AppscriptReport::create([
                 'customer_no' => $customer_no,
-                'barber_id' => $barberDetail->id,
-                'service_id' => $serviceDetail->id,
-                'slug' => $slug,
+                'barber' => $barberDetail->name,
+                'service_id' => $serviceDetail->name,
                 'name' => $name,
                 'booking_type' => $booking_type,
                 'time' => $time,
@@ -124,6 +137,8 @@ class ReportController extends Controller
                 'amount' => $amount,
                 'mop' => $mop
             ]);
+
+
 
             return response()->json('success', 200);
         }
