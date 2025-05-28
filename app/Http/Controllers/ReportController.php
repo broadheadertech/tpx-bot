@@ -79,7 +79,15 @@ class ReportController extends Controller
         $botInfo = Telegram::getMe();
         $botId = $botInfo->getId();
 
-        if ($update->getMessage()) {
+        $message = $update->getMessage();
+        $text = $message->getText();
+        $chatId = $message->getChat()->getId();
+        $senderId = $message->getFrom()->getId();
+
+        // ✅ Prevent bot replying to itself
+        if ($senderId == $botId) {
+            return response()->json('ignored bot', 200);
+        }elseif ($update->getMessage()) {
             $message = $update->getMessage();
             $text = $message->getText();
             $chatId = $message->getChat()->getId();
@@ -88,49 +96,49 @@ class ReportController extends Controller
             // if ($senderId == 7769572088) {
             //     return response()->json('ignored bot', 200);
             // } else {
-                $parsed = $this->parseMessage($text);
+            $parsed = $this->parseMessage($text);
 
-                // Assign variables from the parsed data
-                $customer_no   = $parsed['customer_no'] ?? null;
-                $name          = $parsed['name'] ?? null;
-                $barber        = $parsed['barber'] ?? null;
-                $booking_type  = $parsed['booking_type'] ?? null;
-                $time          = $parsed['time'] ?? null;
-                $date          = $parsed['date'] ?? null;
-                $service       = $parsed['service'] ?? null;
-                $amount        = $parsed['amount'] ?? null;
-                $mop           = $parsed['mop'] ?? null;
+            // Assign variables from the parsed data
+            $customer_no   = $parsed['customer_no'] ?? null;
+            $name          = $parsed['name'] ?? null;
+            $barber        = $parsed['barber'] ?? null;
+            $booking_type  = $parsed['booking_type'] ?? null;
+            $time          = $parsed['time'] ?? null;
+            $date          = $parsed['date'] ?? null;
+            $service       = $parsed['service'] ?? null;
+            $amount        = $parsed['amount'] ?? null;
+            $mop           = $parsed['mop'] ?? null;
 
-                $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nBarber: $barber\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
+            $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nBarber: $barber\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
 
-                Telegram::sendMessage([
-                    'chat_id' => $chatId,
-                    'text' => 'Record has been saved!',
-                ]);
+            Telegram::sendMessage([
+                'chat_id' => $chatId,
+                'text' => 'Record has been saved!',
+            ]);
 
-                $barberDetail = Barber::where('name', strtoupper($barber))->first();
-                $serviceDetail = Service::where('name', strtoupper($service))->first();
-                $slug = Str::random(6);
-                $report = Report::create(
-                    [
-                        'customer_no' => $customer_no,
-                        'barber_id' => $barberDetail->id,
-                        'service_id' => $serviceDetail->id,
-                        'slug' => $slug,
-                        'name' => $name,
-                        'booking_type' => $booking_type,
-                        'time' => $time,
-                        'date' => $date,
-                        'amount' => $amount,
-                        'mop' => $mop
-                    ]
-                );
+            $barberDetail = Barber::where('name', strtoupper($barber))->first();
+            $serviceDetail = Service::where('name', strtoupper($service))->first();
+            $slug = Str::random(6);
+            $report = Report::create(
+                [
+                    'customer_no' => $customer_no,
+                    'barber_id' => $barberDetail->id,
+                    'service_id' => $serviceDetail->id,
+                    'slug' => $slug,
+                    'name' => $name,
+                    'booking_type' => $booking_type,
+                    'time' => $time,
+                    'date' => $date,
+                    'amount' => $amount,
+                    'mop' => $mop
+                ]
+            );
 
 
-                return response()->json(
-                    'success',
-                    200
-                );
+            return response()->json(
+                'success',
+                200
+            );
             // }
         }
     }
