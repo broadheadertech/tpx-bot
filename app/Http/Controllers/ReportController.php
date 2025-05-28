@@ -82,7 +82,7 @@ class ReportController extends Controller
             $chatId = $message->getChat()->getId();
 
             $senderId = $message->getFrom()->getId();
-            $botId = 123456789; // 🔁 Replace this with your actual bot ID
+            $botId = 5325190507; // 🔁 Replace this with your actual bot ID
 
             // ✅ Prevent the bot from replying to itself
             if ($senderId == $botId) {
