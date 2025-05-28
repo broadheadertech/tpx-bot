@@ -145,7 +145,7 @@ class ReportController extends Controller
             $reply = "✅ Booking Info:\nCustomer #: $customer_no\nName: $name\nBarber: $barber\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop";
 
             Telegram::answerCallbackQuery([
-                'callback_query_id' => $chatId,
+                'callback_query_id' => $callback->getId(),
                 'text' => 'Record confirmed!',
             ]);
 
