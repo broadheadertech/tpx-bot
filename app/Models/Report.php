@@ -22,7 +22,6 @@ class Report extends Model
         'date',
         'amount',
         'mop',
-        'status'
     ];
 
     public function barber()

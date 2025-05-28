@@ -107,26 +107,27 @@ class ReportController extends Controller
 
             Telegram::sendMessage([
                 'chat_id' => $chatId,
-                    'text' => $reply,
+                'text' => $reply,
             ]);
 
             $barberDetail = Barber::where('name', strtoupper($barber))->first();
             $serviceDetail = Service::where('name', strtoupper($service))->first();
             $slug = Str::random(6);
-            // $report = Report::create([
-            //     'customer_no' => $customer_no,
-            //     'barber_id' => $barberDetail->id,
-            //     'service_id' => $serviceDetail->id,
-            //     'slug' => $slug,
-            //     'name' => $name,
-            //     'booking_type' => $booking_type,
-            //     'time' => $time,
-            //     'date' => $date,
-            //     'amount' => $amount,
-            //     'mop' => $mop
-            // ]);
 
-              $report = AppscriptReport::create([
+            $report = Report::create([
+                'customer_no' => $customer_no,
+                'barber_id' => $barberDetail->id,
+                'service_id' => $serviceDetail->id,
+                'slug' => $slug,
+                'name' => $name,
+                'booking_type' => $booking_type,
+                'time' => $time,
+                'date' => $date,
+                'amount' => $amount,
+                'mop' => $mop
+            ]);
+
+            $report = AppscriptReport::create([
                 'customer_no' => $customer_no,
                 'barber' => $barberDetail->name,
                 'service' => $serviceDetail->name,
@@ -137,8 +138,6 @@ class ReportController extends Controller
                 'amount' => $amount,
                 'mop' => $mop
             ]);
-
-
 
             return response()->json('success', 200);
         }
@@ -162,5 +161,9 @@ class ReportController extends Controller
         }
 
         return $data;
+    }
+
+    public function getWeeklySales() {
+        
     }
 }
