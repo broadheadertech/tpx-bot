@@ -104,12 +104,10 @@ class ReportController extends Controller
             $amount        = $parsed['amount'] ?? null;
             $mop           = $parsed['mop'] ?? null;
 
-            // $reply = "✅ Record Info:\nCustomer #: $customer_no\nName: $name\nBarber: $barber\nType: $booking_type\nTime: $time\nDate: $date\nService: $service\nAmount: $amount\nMOP: $mop \n \n '✅ Record has been saved!";
-
-            // Telegram::sendMessage([
-            //     'chat_id' => $chatId,
-            //     'text' => $reply,
-            // ]);
+            Telegram::sendMessage([
+                'chat_id' => $chatId,
+                'text' => 'Record Saved!',
+            ]);
 
             $barberDetail = Barber::where('name', strtoupper($barber))->first();
             $serviceDetail = Service::where('name', strtoupper($service))->first();
@@ -213,8 +211,7 @@ class ReportController extends Controller
                     $serviceName = $serviceReports->first()->service->name ?? 'Unknown Service';
 
                     $todaysIncentive = $serviceReports->sum('amount') * $serviceReports->first()->service->percentage;
-                    if($barberRate > $todaysIncentive)
-                    {
+                    if ($barberRate > $todaysIncentive) {
                         $todaysIncentive = $barberRate;
                     }
                     $serviceEntries[] = [
