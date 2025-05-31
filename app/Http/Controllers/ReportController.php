@@ -85,16 +85,18 @@ class ReportController extends Controller
             $chatId = $message->getChat()->getId();
 
             $senderId = $message->getFrom()->getId();
-            $botId = 7769572088; // Replace with your actual bot ID
 
+            // ✅ Replace this with your actual bot ID from Telegram::getMe()
+            $botId = 7769572088;
+
+            // ✅ Prevent bot from replying to itself
             if ($senderId == $botId) {
-                return;
+                return response()->json('Ignored bot message', 200);
             }
 
             try {
                 $parsed = $this->parseMessage($text);
 
-                // Assign variables from the parsed data
                 $customer_no   = $parsed['customer_no'] ?? throw new \Exception("Missing customer number");
                 $name          = $parsed['name'] ?? throw new \Exception("Missing name");
                 $barber        = $parsed['barber'] ?? throw new \Exception("Missing barber");
@@ -144,7 +146,7 @@ class ReportController extends Controller
 
                 Telegram::sendMessage([
                     'chat_id' => $chatId,
-                    'text' => 'Record Saved!',
+                    'text' => '✅ Record Saved!',
                 ]);
 
                 return response()->json('success', 200);
@@ -153,6 +155,7 @@ class ReportController extends Controller
                     'chat_id' => $chatId,
                     'text' => "❌ Error: " . $e->getMessage(),
                 ]);
+
                 return response()->json(['error' => $e->getMessage()], 400);
             }
         }
