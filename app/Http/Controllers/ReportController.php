@@ -78,67 +78,83 @@ class ReportController extends Controller
     public function webhook(Request $request)
     {
         $update = Telegram::getWebhookUpdate();
+
         if ($update->getMessage()) {
             $message = $update->getMessage();
             $text = $message->getText();
             $chatId = $message->getChat()->getId();
 
             $senderId = $message->getFrom()->getId();
-            $botId = 7769572088; // 🔁 Replace this with your actual bot ID
+            $botId = 7769572088; // Replace with your actual bot ID
 
-            // ✅ Prevent the bot from replying to itself
             if ($senderId == $botId) {
                 return;
             }
 
-            $parsed = $this->parseMessage($text);
+            try {
+                $parsed = $this->parseMessage($text);
 
-            // Assign variables from the parsed data
-            $customer_no   = $parsed['customer_no'] ?? null;
-            $name          = $parsed['name'] ?? null;
-            $barber        = $parsed['barber'] ?? null;
-            $booking_type  = $parsed['booking_type'] ?? null;
-            $time          = $parsed['time'] ?? null;
-            $date          = $parsed['date'] ?? null;
-            $service       = $parsed['service'] ?? null;
-            $amount        = $parsed['amount'] ?? null;
-            $mop           = $parsed['mop'] ?? null;
+                // Assign variables from the parsed data
+                $customer_no   = $parsed['customer_no'] ?? throw new \Exception("Missing customer number");
+                $name          = $parsed['name'] ?? throw new \Exception("Missing name");
+                $barber        = $parsed['barber'] ?? throw new \Exception("Missing barber");
+                $booking_type  = $parsed['booking_type'] ?? throw new \Exception("Missing booking type");
+                $time          = $parsed['time'] ?? throw new \Exception("Missing time");
+                $date          = $parsed['date'] ?? throw new \Exception("Missing date");
+                $service       = $parsed['service'] ?? throw new \Exception("Missing service");
+                $amount        = $parsed['amount'] ?? throw new \Exception("Missing amount");
+                $mop           = $parsed['mop'] ?? throw new \Exception("Missing mode of payment");
 
-            Telegram::sendMessage([
-                'chat_id' => $chatId,
-                'text' => 'Record Saved!',
-            ]);
+                $barberDetail = Barber::where('name', strtoupper($barber))->first();
+                if (!$barberDetail) {
+                    throw new \Exception("Barber not found");
+                }
 
-            $barberDetail = Barber::where('name', strtoupper($barber))->first();
-            $serviceDetail = Service::where('name', strtoupper($service))->first();
-            $slug = Str::random(6);
+                $serviceDetail = Service::where('name', strtoupper($service))->first();
+                if (!$serviceDetail) {
+                    throw new \Exception("Service not found");
+                }
 
-            $report = Report::create([
-                'customer_no' => $customer_no,
-                'barber_id' => $barberDetail->id,
-                'service_id' => $serviceDetail->id,
-                'slug' => $slug,
-                'name' => $name,
-                'booking_type' => $booking_type,
-                'time' => $time,
-                'date' => $date,
-                'amount' => $amount,
-                'mop' => $mop
-            ]);
+                $slug = Str::random(6);
 
-            $report = AppscriptReport::create([
-                'customer_no' => $customer_no,
-                'barber' => $barberDetail->name,
-                'service' => $serviceDetail->name,
-                'name' => $name,
-                'booking_type' => $booking_type,
-                'time' => $time,
-                'date' => $date,
-                'amount' => $amount,
-                'mop' => $mop
-            ]);
+                Report::create([
+                    'customer_no' => $customer_no,
+                    'barber_id' => $barberDetail->id,
+                    'service_id' => $serviceDetail->id,
+                    'slug' => $slug,
+                    'name' => $name,
+                    'booking_type' => $booking_type,
+                    'time' => $time,
+                    'date' => $date,
+                    'amount' => $amount,
+                    'mop' => $mop
+                ]);
 
-            return response()->json('success', 200);
+                AppscriptReport::create([
+                    'customer_no' => $customer_no,
+                    'barber' => $barberDetail->name,
+                    'service' => $serviceDetail->name,
+                    'name' => $name,
+                    'booking_type' => $booking_type,
+                    'time' => $time,
+                    'date' => $date,
+                    'amount' => $amount,
+                    'mop' => $mop
+                ]);
+
+                Telegram::sendMessage([
+                    'chat_id' => $chatId,
+                    'text' => 'Record Saved!',
+                ]);
+
+                return response()->json('success', 200);
+            } catch (\Exception $e) {
+                Telegram::sendMessage([
+                    'chat_id' => $chatId,
+                    'text' => "❌ Error: " . $e->getMessage(),
+                ]);
+                return response()->json(['error' => $e->getMessage()], 400);
+            }
         }
     }
 
@@ -200,25 +216,21 @@ class ReportController extends Controller
             });
 
             $dailyServices = [];
-
+            $todaysIncentive = 0;
             foreach ($sortedDates as $date => $dailyReports) {
                 $groupedByService = $dailyReports->groupBy('service_id');
 
                 $serviceEntries = [];
-
-
+                $incentive = 0;
                 foreach ($groupedByService as $serviceId => $serviceReports) {
                     $serviceName = $serviceReports->first()->service->name ?? 'Unknown Service';
+                    $incentive = $incentive + ($serviceReports->sum('amount') * $serviceReports->first()->service->percentage);
 
-                    $todaysIncentive = $serviceReports->sum('amount') * $serviceReports->first()->service->percentage;
-                    if ($barberRate > $todaysIncentive) {
-                        $todaysIncentive = $barberRate;
-                    }
                     $serviceEntries[] = [
                         'name' => $serviceName,
                         'count' => $serviceReports->count(),
                         'gross_amount' => $serviceReports->sum('amount'),
-                        'salary_for_the_day' => $todaysIncentive
+                        'incentive' => $serviceReports->sum('amount') * $serviceReports->first()->service->percentage
                     ];
                 }
 
@@ -226,6 +238,11 @@ class ReportController extends Controller
                     'date' => $date,
                     'entries' => $serviceEntries,
                 ];
+
+                $todaysIncentive = $todaysIncentive + $incentive;
+                if ($barberRate > $todaysIncentive) {
+                    $todaysIncentive = $barberRate;
+                }
 
                 $totalSalary = $totalSalary + $todaysIncentive;
             }
