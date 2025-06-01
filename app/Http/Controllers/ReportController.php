@@ -211,9 +211,10 @@ class ReportController extends Controller
         $result = [];
 
         foreach ($groupedByBarber as $barberId => $barberReports) {
+            $totalSalary = 0;
             $barberName = $barberReports->first()->barber->name ?? 'Unknown Barber';
             $barberRate = $barberReports->first()->barber->rate;
-            $totalSalary = 0;
+
             // Group by date (still string format)
             $groupedByDate = $barberReports->groupBy('date');
 
@@ -230,8 +231,9 @@ class ReportController extends Controller
                 $groupedByService = $dailyReports->groupBy('service_id');
 
                 $serviceEntries = [];
-                $incentive = 0;
+
                 foreach ($groupedByService as $serviceId => $serviceReports) {
+                    $incentive = 0;
                     $serviceName = $serviceReports->first()->service->name ?? 'Unknown Service';
                     $incentive = $incentive + ($serviceReports->sum('amount') * $serviceReports->first()->service->percentage);
 
