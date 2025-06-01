@@ -115,95 +115,66 @@ class ReportController extends Controller
         return response()->json(['status' => 'ok']);
     }
 
-    public function handleAddReport(Request $request)
+    private function handleAddReport($text, $chatId)
     {
-        $update = Telegram::getWebhookUpdate();
+        try {
+            $parsed = $this->parseMessage($text); // your custom parser
 
-        if ($update->getMessage()) {
-            $message = $update->getMessage();
-            $text = $message->getText();
-            $chatId = $message->getChat()->getId();
+            $customer_no  = $parsed['customer_no'] ?? throw new \Exception("Missing customer_no");
+            $name         = $parsed['name'] ?? throw new \Exception("Missing name");
+            $barberName   = $parsed['barber'] ?? throw new \Exception("Missing barber");
+            $booking_type = $parsed['booking_type'] ?? throw new \Exception("Missing booking_type");
+            $time         = $parsed['time'] ?? throw new \Exception("Missing time");
+            $date         = $parsed['date'] ?? throw new \Exception("Missing date");
+            $serviceName  = $parsed['service'] ?? throw new \Exception("Missing service");
+            $amount       = $parsed['amount'] ?? throw new \Exception("Missing amount");
+            $mop          = $parsed['mop'] ?? throw new \Exception("Missing mop");
 
-            $senderId = $message->getFrom()->getId();
+            $barber = Barber::where('name', strtoupper($barberName))->first();
+            $service = Service::where('name', strtoupper($serviceName))->first();
 
-            // ✅ Get the actual bot ID dynamically (or cache this)
-            $botId = Telegram::getMe()->getId();
+            if (!$barber) throw new \Exception("Barber not found: " . $barberName);
+            if (!$service) throw new \Exception("Service not found: " . $serviceName);
 
-            // ✅ Log sender and bot IDs (for debugging — remove later)
-            Log::info('Sender ID: ' . $senderId);
-            Log::info('Bot ID: ' . $botId);
+            $slug = Str::random(6);
 
-            // ✅ Prevent bot from replying to itself
-            if ($senderId == $botId) {
-                return response()->json('Bot message ignored', 200);
-            }
+            Report::create([
+                'customer_no' => $customer_no,
+                'barber_id'   => $barber->id,
+                'service_id'  => $service->id,
+                'slug'        => $slug,
+                'name'        => $name,
+                'booking_type'=> $booking_type,
+                'time'        => $time,
+                'date'        => $date,
+                'amount'      => $amount,
+                'mop'         => $mop,
+            ]);
 
-            try {
-                $parsed = $this->parseMessage($text);
+            AppscriptReport::create([
+                'customer_no' => $customer_no,
+                'barber'      => $barber->name,
+                'service'     => $service->name,
+                'name'        => $name,
+                'booking_type'=> $booking_type,
+                'time'        => $time,
+                'date'        => $date,
+                'amount'      => $amount,
+                'mop'         => $mop,
+            ]);
 
-                // Assign variables from the parsed data
-                $customer_no   = $parsed['customer_no'] ?? throw new \Exception("Missing customer_no");
-                $name          = $parsed['name'] ?? throw new \Exception("Missing name");
-                $barber        = $parsed['barber'] ?? throw new \Exception("Missing barber");
-                $booking_type  = $parsed['booking_type'] ?? throw new \Exception("Missing booking_type");
-                $time          = $parsed['time'] ?? throw new \Exception("Missing time");
-                $date          = $parsed['date'] ?? throw new \Exception("Missing date");
-                $service       = $parsed['service'] ?? throw new \Exception("Missing service");
-                $amount        = $parsed['amount'] ?? throw new \Exception("Missing amount");
-                $mop           = $parsed['mop'] ?? throw new \Exception("Missing mode of payment");
+            Telegram::sendMessage([
+                'chat_id' => $chatId,
+                'text' => '✅ Report saved successfully.',
+            ]);
 
-                $barberDetail = Barber::where('name', strtoupper($barber))->first();
-                if (!$barberDetail) {
-                    throw new \Exception("Barber not found: " . $barber);
-                }
-
-                $serviceDetail = Service::where('name', strtoupper($service))->first();
-                if (!$serviceDetail) {
-                    throw new \Exception("Service not found: " . $service);
-                }
-
-                $slug = Str::random(6);
-
-                Report::create([
-                    'customer_no'   => $customer_no,
-                    'barber_id'     => $barberDetail->id,
-                    'service_id'    => $serviceDetail->id,
-                    'slug'          => $slug,
-                    'name'          => $name,
-                    'booking_type'  => $booking_type,
-                    'time'          => $time,
-                    'date'          => $date,
-                    'amount'        => $amount,
-                    'mop'           => $mop
-                ]);
-
-                AppscriptReport::create([
-                    'customer_no'   => $customer_no,
-                    'barber'        => $barberDetail->name,
-                    'service'       => $serviceDetail->name,
-                    'name'          => $name,
-                    'booking_type'  => $booking_type,
-                    'time'          => $time,
-                    'date'          => $date,
-                    'amount'        => $amount,
-                    'mop'           => $mop
-                ]);
-
-                Telegram::sendMessage([
-                    'chat_id' => $chatId,
-                    'text' => '✅ Record Saved!',
-                ]);
-
-                return response()->json('success', 200);
-            } catch (\Exception $e) {
-                Telegram::sendMessage([
-                    'chat_id' => $chatId,
-                    'text' => "❌ Error: " . $e->getMessage(),
-                ]);
-
-                // ✅ Always return 200 to stop Telegram retries
-                return response()->json(['error' => $e->getMessage()], 200);
-            }
+            return response()->json('success', 200);
+        } catch (\Exception $e) {
+            Telegram::sendMessage([
+                'chat_id' => $chatId,
+                'text' => "❌ Error: " . $e->getMessage(),
+            ]);
+            return response()->json(['error' => $e->getMessage()], 200);
         }
     }
 
