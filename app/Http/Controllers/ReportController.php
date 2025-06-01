@@ -235,10 +235,6 @@ class ReportController extends Controller
                     $incentive = 0;
                     $serviceName = $serviceReports->first()->service->name ?? 'Unknown Service';
                     $incentive = $incentive + ($serviceReports->sum('amount') * $serviceReports->first()->service->percentage);
-
-                    if ($barberRate > $incentive) {
-                        $incentive = $barberRate;
-                    }
                     $serviceEntries[] = [
                         'name' => $serviceName,
                         'count' => $serviceReports->count(),
@@ -255,6 +251,11 @@ class ReportController extends Controller
                     'date' => $date,
                     'entries' => $serviceEntries,
                 ];
+
+                if($barberRate > $totalIncentive)
+                {
+                    $totalIncentive = $barberRate;
+                }
 
                 $totalSalary = $totalSalary + $totalIncentive;
             }
