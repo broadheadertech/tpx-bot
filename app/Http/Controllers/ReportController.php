@@ -396,7 +396,7 @@ class ReportController extends Controller
     {
         // Your bot's API token and chat ID
         $botToken = "7769572088:AAFW5ulJXrRD7f8eYbnKofpypsDnUYNwjWo";  // Replace with your bot's token
-        $chatId = '-4764468184';      // Replace with your group's chat ID
+        $chatId = '-4942058217';      // Replace with your group's chat ID
 
         // Telegram API endpoint
         $url = "https://api.telegram.org/bot{$botToken}/sendMessage";
