@@ -367,27 +367,6 @@ class ReportController extends Controller
             $this->sendToTelegram($barberMessage);
         }
 
-        // Format the message to send to Telegram
-        // $message = "Weekly Sales Report\n\n";
-        // foreach ($result as $barberReport) {
-        //     $message .= "Barber: " . $barberReport['barber'] . "\n";
-        //     $message .= "Total Salary: $" . number_format($barberReport['total_salary'], 2) . "\n";
-        //     $message .= "---------------------------------\n";
-        //     foreach ($barberReport['services'] as $service) {
-        //         $message .= "Date: " . $service['date'] . "\n";
-        //         foreach ($service['entries'] as $entry) {
-        //             $message .= "Service: " . $entry['name'] . "\n";
-        //             $message .= "Gross Amount: $" . number_format($entry['gross_amount'], 2) . "\n";
-        //             $message .= "Incentive: $" . number_format($entry['incentive'], 2) . "\n";
-        //         }
-        //         $message .= "---------------------------------\n";
-        //     }
-        // }
-
-        // // Send the message to Telegram
-        // $this->sendToTelegram($message);
-
-        // Return response
         return response()->json($result);
     }
 
@@ -417,5 +396,63 @@ class ReportController extends Controller
             Log::error('Telegram message failed: ' . $e->getMessage());
             return false;
         }
+    }
+
+    public function getRecordedWeeks()
+    {
+        $reports = Report::all();
+
+        $weeks = collect();
+
+        foreach ($reports as $report) {
+            try {
+                $date = Carbon::createFromFormat('m/d/Y', $report->date);
+                $startOfWeek = $date->startOfWeek(Carbon::MONDAY)->copy();
+                $endOfWeek = $date->endOfWeek(Carbon::SUNDAY)->copy();
+
+                $range = $startOfWeek->format('F j, Y') . ' - ' . $endOfWeek->format('F j, Y');
+
+                $weeks->push($range);
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+
+        $uniqueWeeks = $weeks->unique()->sort();
+
+        $message = "📅 <b>Recorded Weeks:</b>\n\n";
+        foreach ($uniqueWeeks as $week) {
+            $message .= "• {$week}\n";
+        }
+
+        return $message;
+    }
+
+    public function handleTelegramWebhook(Request $request)
+    {
+        $text = strtolower(trim($request->input('message.text')));
+        $chatId = $request->input('message.chat.id');
+
+        switch ($text) {
+            case 'report':
+                $message = $this->getRecordedWeeks();
+                break;
+
+            case 'start':
+                $message = "👋 Welcome to the barber report bot!";
+                break;
+
+            case 'help':
+                $message = "Available commands:\n- report\n- help";
+                break;
+
+            default:
+                $message = "❓ Unknown command. Type 'help' for a list.";
+                break;
+        }
+
+        $this->sendToTelegram($message, $chatId);
+
+        return response()->json(['status' => 'ok']);
     }
 }
