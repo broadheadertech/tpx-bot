@@ -361,10 +361,10 @@ class ReportController extends Controller
                     $barberMessage .= "  - Incentive: $" . number_format($entry['incentive'], 2) . "\n";
                 }
                 $barberMessage .= "-----------------------\n";
-
-                // Send formatted message to Telegram
-                $this->sendToTelegram($barberMessage);
             }
+
+            // Send formatted message to Telegram
+            $this->sendToTelegram($barberMessage);
         }
 
         // Format the message to send to Telegram
