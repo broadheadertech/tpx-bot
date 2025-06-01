@@ -82,6 +82,137 @@ class ReportController extends Controller
 
         if ($update->getMessage()) {
             $message = $update->getMessage();
+            $text = trim($message->getText());
+            $chatId = $message->getChat()->getId();
+            $senderId = $message->getFrom()->getId();
+            $botId = Telegram::getMe()->getId();
+
+            if ($senderId == $botId) {
+                return response()->json('Bot message ignored', 200);
+            }
+
+            $command = strtolower(explode(' ', $text)[0]); // first word as command
+
+            if ($command === 'add-report') {
+                return $this->handleAddReport($text, $chatId);
+            }
+
+            // if ($command === 'generate-report') {
+            //     return $this->handleGenerateReport($chatId);
+            // }
+
+            // if ($command === 'check-report') {
+            //     return $this->handleCheckReport($chatId);
+            // }
+
+            // Unknown command fallback
+            Telegram::sendMessage([
+                'chat_id' => $chatId,
+                'text' => "🤖 Available commands:\n- add-report <details>\n- generate-report\n- check-report",
+            ]);
+        }
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    public function handleAddReport(Request $request)
+    {
+        $update = Telegram::getWebhookUpdate();
+
+        if ($update->getMessage()) {
+            $message = $update->getMessage();
+            $text = $message->getText();
+            $chatId = $message->getChat()->getId();
+
+            $senderId = $message->getFrom()->getId();
+
+            // ✅ Get the actual bot ID dynamically (or cache this)
+            $botId = Telegram::getMe()->getId();
+
+            // ✅ Log sender and bot IDs (for debugging — remove later)
+            Log::info('Sender ID: ' . $senderId);
+            Log::info('Bot ID: ' . $botId);
+
+            // ✅ Prevent bot from replying to itself
+            if ($senderId == $botId) {
+                return response()->json('Bot message ignored', 200);
+            }
+
+            try {
+                $parsed = $this->parseMessage($text);
+
+                // Assign variables from the parsed data
+                $customer_no   = $parsed['customer_no'] ?? throw new \Exception("Missing customer_no");
+                $name          = $parsed['name'] ?? throw new \Exception("Missing name");
+                $barber        = $parsed['barber'] ?? throw new \Exception("Missing barber");
+                $booking_type  = $parsed['booking_type'] ?? throw new \Exception("Missing booking_type");
+                $time          = $parsed['time'] ?? throw new \Exception("Missing time");
+                $date          = $parsed['date'] ?? throw new \Exception("Missing date");
+                $service       = $parsed['service'] ?? throw new \Exception("Missing service");
+                $amount        = $parsed['amount'] ?? throw new \Exception("Missing amount");
+                $mop           = $parsed['mop'] ?? throw new \Exception("Missing mode of payment");
+
+                $barberDetail = Barber::where('name', strtoupper($barber))->first();
+                if (!$barberDetail) {
+                    throw new \Exception("Barber not found: " . $barber);
+                }
+
+                $serviceDetail = Service::where('name', strtoupper($service))->first();
+                if (!$serviceDetail) {
+                    throw new \Exception("Service not found: " . $service);
+                }
+
+                $slug = Str::random(6);
+
+                Report::create([
+                    'customer_no'   => $customer_no,
+                    'barber_id'     => $barberDetail->id,
+                    'service_id'    => $serviceDetail->id,
+                    'slug'          => $slug,
+                    'name'          => $name,
+                    'booking_type'  => $booking_type,
+                    'time'          => $time,
+                    'date'          => $date,
+                    'amount'        => $amount,
+                    'mop'           => $mop
+                ]);
+
+                AppscriptReport::create([
+                    'customer_no'   => $customer_no,
+                    'barber'        => $barberDetail->name,
+                    'service'       => $serviceDetail->name,
+                    'name'          => $name,
+                    'booking_type'  => $booking_type,
+                    'time'          => $time,
+                    'date'          => $date,
+                    'amount'        => $amount,
+                    'mop'           => $mop
+                ]);
+
+                Telegram::sendMessage([
+                    'chat_id' => $chatId,
+                    'text' => '✅ Record Saved!',
+                ]);
+
+                return response()->json('success', 200);
+            } catch (\Exception $e) {
+                Telegram::sendMessage([
+                    'chat_id' => $chatId,
+                    'text' => "❌ Error: " . $e->getMessage(),
+                ]);
+
+                // ✅ Always return 200 to stop Telegram retries
+                return response()->json(['error' => $e->getMessage()], 200);
+            }
+        }
+    }
+
+    public function webhookOriginal(Request $request)
+    {
+        $update = Telegram::getWebhookUpdate();
+
+        if ($update->getMessage()) {
+            $message = $update->getMessage();
             $text = $message->getText();
             $chatId = $message->getChat()->getId();
 
@@ -396,63 +527,5 @@ class ReportController extends Controller
             Log::error('Telegram message failed: ' . $e->getMessage());
             return false;
         }
-    }
-
-    public function getRecordedWeeks()
-    {
-        $reports = Report::all();
-
-        $weeks = collect();
-
-        foreach ($reports as $report) {
-            try {
-                $date = Carbon::createFromFormat('m/d/Y', $report->date);
-                $startOfWeek = $date->startOfWeek(Carbon::MONDAY)->copy();
-                $endOfWeek = $date->endOfWeek(Carbon::SUNDAY)->copy();
-
-                $range = $startOfWeek->format('F j, Y') . ' - ' . $endOfWeek->format('F j, Y');
-
-                $weeks->push($range);
-            } catch (\Exception $e) {
-                continue;
-            }
-        }
-
-        $uniqueWeeks = $weeks->unique()->sort();
-
-        $message = "📅 <b>Recorded Weeks:</b>\n\n";
-        foreach ($uniqueWeeks as $week) {
-            $message .= "• {$week}\n";
-        }
-
-        return $message;
-    }
-
-    public function handleTelegramWebhook(Request $request)
-    {
-        $text = strtolower(trim($request->input('message.text')));
-        $chatId = $request->input('message.chat.id');
-
-        switch ($text) {
-            case 'report':
-                $message = $this->getRecordedWeeks();
-                break;
-
-            case 'start':
-                $message = "👋 Welcome to the barber report bot!";
-                break;
-
-            case 'help':
-                $message = "Available commands:\n- report\n- help";
-                break;
-
-            default:
-                $message = "❓ Unknown command. Type 'help' for a list.";
-                break;
-        }
-
-        $this->sendToTelegram($message, $chatId);
-
-        return response()->json(['status' => 'ok']);
     }
 }
