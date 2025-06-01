@@ -230,7 +230,7 @@ class ReportController extends Controller
                 $groupedByService = $dailyReports->groupBy('service_id');
 
                 $serviceEntries = [];
-
+                $totalIncentive = 0;
                 foreach ($groupedByService as $serviceId => $serviceReports) {
                     $incentive = 0;
                     $serviceName = $serviceReports->first()->service->name ?? 'Unknown Service';
@@ -246,14 +246,17 @@ class ReportController extends Controller
                         'incentive' => $incentive
                     ];
 
-                     $totalSalary = $totalSalary + $incentive;
+                    $totalIncentive = $totalIncentive + $incentive;
                 }
+
+
 
                 $dailyServices[] = [
                     'date' => $date,
                     'entries' => $serviceEntries,
                 ];
 
+                $totalSalary = $totalSalary + $totalIncentive;
             }
 
             $result[] = [
