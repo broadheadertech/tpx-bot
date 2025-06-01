@@ -341,42 +341,51 @@ class ReportController extends Controller
                 $totalSalary = $totalSalary + $totalIncentive;
             }
 
-            $resultDetail =  [
-                'barber' => $barberName,
-                'barber_rate' => $barberRate,
-                'services' => $dailyServices,
-                'total_salary' => $totalSalary,
-            ];
-
-             // Format the message to send to Telegram
-        $message = "Weekly Sales Report\n\n";
-        foreach ($resultDetail as $barberReport) {
-            $message .= "Barber: " . $barberReport['barber'] . "\n";
-            $message .= "Total Salary: $" . number_format($barberReport['total_salary'], 2) . "\n";
-            $message .= "---------------------------------\n";
-            foreach ($barberReport['services'] as $service) {
-                $message .= "Date: " . $service['date'] . "\n";
-                foreach ($service['entries'] as $entry) {
-                    $message .= "Service: " . $entry['name'] . "\n";
-                    $message .= "Gross Amount: $" . number_format($entry['gross_amount'], 2) . "\n";
-                    $message .= "Incentive: $" . number_format($entry['incentive'], 2) . "\n";
-                }
-                $message .= "---------------------------------\n";
-            }
-        }
-
-        // Send the message to Telegram
-        $this->sendToTelegram($message);
-
             $result[] = [
                 'barber' => $barberName,
                 'barber_rate' => $barberRate,
                 'services' => $dailyServices,
                 'total_salary' => $totalSalary,
             ];
+
+            $barberMessage = "🧑‍🔧 <b>Weekly Report for: {$barberName}</b>\n";
+            $barberMessage .= "💰 <b>Total Salary:</b> $" . number_format($totalSalary, 2) . "\n";
+            $barberMessage .= "💵 <b>Base Rate:</b> $" . number_format($barberRate, 2) . "\n\n";
+
+            foreach ($dailyServices as $day) {
+                $barberMessage .= "📅 <b>Date:</b> {$day['date']}\n";
+                foreach ($day['entries'] as $entry) {
+                    $barberMessage .= "• <b>Service:</b> {$entry['name']}\n";
+                    $barberMessage .= "  - Count: {$entry['count']}\n";
+                    $barberMessage .= "  - Gross: $" . number_format($entry['gross_amount'], 2) . "\n";
+                    $barberMessage .= "  - Incentive: $" . number_format($entry['incentive'], 2) . "\n";
+                }
+                $barberMessage .= "-----------------------\n";
+
+                // Send formatted message to Telegram
+                $this->sendToTelegram($barberMessage);
+            }
         }
 
+        // Format the message to send to Telegram
+        // $message = "Weekly Sales Report\n\n";
+        // foreach ($result as $barberReport) {
+        //     $message .= "Barber: " . $barberReport['barber'] . "\n";
+        //     $message .= "Total Salary: $" . number_format($barberReport['total_salary'], 2) . "\n";
+        //     $message .= "---------------------------------\n";
+        //     foreach ($barberReport['services'] as $service) {
+        //         $message .= "Date: " . $service['date'] . "\n";
+        //         foreach ($service['entries'] as $entry) {
+        //             $message .= "Service: " . $entry['name'] . "\n";
+        //             $message .= "Gross Amount: $" . number_format($entry['gross_amount'], 2) . "\n";
+        //             $message .= "Incentive: $" . number_format($entry['incentive'], 2) . "\n";
+        //         }
+        //         $message .= "---------------------------------\n";
+        //     }
+        // }
 
+        // // Send the message to Telegram
+        // $this->sendToTelegram($message);
 
         // Return response
         return response()->json($result);
