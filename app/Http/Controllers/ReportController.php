@@ -226,7 +226,6 @@ class ReportController extends Controller
             });
 
             $dailyServices = [];
-            $todaysIncentive = 0;
             foreach ($sortedDates as $date => $dailyReports) {
                 $groupedByService = $dailyReports->groupBy('service_id');
 
@@ -237,8 +236,7 @@ class ReportController extends Controller
                     $serviceName = $serviceReports->first()->service->name ?? 'Unknown Service';
                     $incentive = $incentive + ($serviceReports->sum('amount') * $serviceReports->first()->service->percentage);
 
-                    if($barberRate > $incentive)
-                    {
+                    if ($barberRate > $incentive) {
                         $incentive = $barberRate;
                     }
                     $serviceEntries[] = [
@@ -247,6 +245,8 @@ class ReportController extends Controller
                         'gross_amount' => $serviceReports->sum('amount'),
                         'incentive' => $incentive
                     ];
+
+                     $totalSalary = $totalSalary + $incentive;
                 }
 
                 $dailyServices[] = [
@@ -254,12 +254,6 @@ class ReportController extends Controller
                     'entries' => $serviceEntries,
                 ];
 
-                $todaysIncentive = $todaysIncentive + $incentive;
-                if ($barberRate > $todaysIncentive) {
-                    $todaysIncentive = $barberRate;
-                }
-
-                $totalSalary = $totalSalary + $todaysIncentive;
             }
 
             $result[] = [
