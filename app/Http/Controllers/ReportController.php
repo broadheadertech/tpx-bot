@@ -340,29 +340,34 @@ class ReportController extends Controller
 
                 $totalSalary = $totalSalary + $totalIncentive;
             }
-             $resultDetail = [
+
+            $resultDetail =  [
                 'barber' => $barberName,
                 'barber_rate' => $barberRate,
                 'services' => $dailyServices,
                 'total_salary' => $totalSalary,
             ];
 
-            // Format the message to send to Telegram
-            $message = "Weekly Sales Report\n\n";
-            foreach ($resultDetail as $barberReport) {
-                $message .= "Barber: " . $barberReport['barber'] . "\n";
-                $message .= "Total Salary: $" . number_format($barberReport['total_salary'], 2) . "\n";
-                $message .= "---------------------------------\n";
-                foreach ($barberReport['services'] as $service) {
-                    $message .= "Date: " . $service['date'] . "\n";
-                    foreach ($service['entries'] as $entry) {
-                        $message .= "Service: " . $entry['name'] . "\n";
-                        $message .= "Gross Amount: $" . number_format($entry['gross_amount'], 2) . "\n";
-                        $message .= "Incentive: $" . number_format($entry['incentive'], 2) . "\n";
-                    }
-                    $message .= "---------------------------------\n\n\n";
+             // Format the message to send to Telegram
+        $message = "Weekly Sales Report\n\n";
+        foreach ($resultDetail as $barberReport) {
+            $message .= "Barber: " . $barberReport['barber'] . "\n";
+            $message .= "Total Salary: $" . number_format($barberReport['total_salary'], 2) . "\n";
+            $message .= "---------------------------------\n";
+            foreach ($barberReport['services'] as $service) {
+                $message .= "Date: " . $service['date'] . "\n";
+                foreach ($service['entries'] as $entry) {
+                    $message .= "Service: " . $entry['name'] . "\n";
+                    $message .= "Gross Amount: $" . number_format($entry['gross_amount'], 2) . "\n";
+                    $message .= "Incentive: $" . number_format($entry['incentive'], 2) . "\n";
                 }
+                $message .= "---------------------------------\n";
             }
+        }
+
+        // Send the message to Telegram
+        $this->sendToTelegram($message);
+
             $result[] = [
                 'barber' => $barberName,
                 'barber_rate' => $barberRate,
@@ -372,9 +377,6 @@ class ReportController extends Controller
         }
 
 
-
-        // Send the message to Telegram
-        $this->sendToTelegram($message);
 
         // Return response
         return response()->json($result);
