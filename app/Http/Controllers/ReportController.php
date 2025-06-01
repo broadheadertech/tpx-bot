@@ -82,108 +82,6 @@ class ReportController extends Controller
 
         if ($update->getMessage()) {
             $message = $update->getMessage();
-            $text = trim($message->getText());
-            $chatId = $message->getChat()->getId();
-            $senderId = $message->getFrom()->getId();
-            $botId = Telegram::getMe()->getId();
-
-            if ($senderId == $botId) {
-                return response()->json('Bot message ignored', 200);
-            }
-
-            $command = strtolower(explode(' ', $text)[0]); // first word as command
-
-            if ($command === 'add-report') {
-                return $this->handleAddReport($text, $chatId);
-            }
-
-            // if ($command === 'generate-report') {
-            //     return $this->handleGenerateReport($chatId);
-            // }
-
-            // if ($command === 'check-report') {
-            //     return $this->handleCheckReport($chatId);
-            // }
-
-            // Unknown command fallback
-            Telegram::sendMessage([
-                'chat_id' => $chatId,
-                'text' => "🤖 Available commands:\n- add-report <details>\n- generate-report\n- check-report",
-            ]);
-        }
-
-        return response()->json(['status' => 'ok']);
-    }
-
-    private function handleAddReport($text, $chatId)
-    {
-        try {
-            $parsed = $this->parseMessage($text); // your custom parser
-
-            $customer_no  = $parsed['customer_no'] ?? throw new \Exception("Missing customer_no");
-            $name         = $parsed['name'] ?? throw new \Exception("Missing name");
-            $barberName   = $parsed['barber'] ?? throw new \Exception("Missing barber");
-            $booking_type = $parsed['booking_type'] ?? throw new \Exception("Missing booking_type");
-            $time         = $parsed['time'] ?? throw new \Exception("Missing time");
-            $date         = $parsed['date'] ?? throw new \Exception("Missing date");
-            $serviceName  = $parsed['service'] ?? throw new \Exception("Missing service");
-            $amount       = $parsed['amount'] ?? throw new \Exception("Missing amount");
-            $mop          = $parsed['mop'] ?? throw new \Exception("Missing mop");
-
-            $barber = Barber::where('name', strtoupper($barberName))->first();
-            $service = Service::where('name', strtoupper($serviceName))->first();
-
-            if (!$barber) throw new \Exception("Barber not found: " . $barberName);
-            if (!$service) throw new \Exception("Service not found: " . $serviceName);
-
-            $slug = Str::random(6);
-
-            Report::create([
-                'customer_no' => $customer_no,
-                'barber_id'   => $barber->id,
-                'service_id'  => $service->id,
-                'slug'        => $slug,
-                'name'        => $name,
-                'booking_type'=> $booking_type,
-                'time'        => $time,
-                'date'        => $date,
-                'amount'      => $amount,
-                'mop'         => $mop,
-            ]);
-
-            AppscriptReport::create([
-                'customer_no' => $customer_no,
-                'barber'      => $barber->name,
-                'service'     => $service->name,
-                'name'        => $name,
-                'booking_type'=> $booking_type,
-                'time'        => $time,
-                'date'        => $date,
-                'amount'      => $amount,
-                'mop'         => $mop,
-            ]);
-
-            Telegram::sendMessage([
-                'chat_id' => $chatId,
-                'text' => '✅ Report saved successfully.',
-            ]);
-
-            return response()->json('success', 200);
-        } catch (\Exception $e) {
-            Telegram::sendMessage([
-                'chat_id' => $chatId,
-                'text' => "❌ Error: " . $e->getMessage(),
-            ]);
-            return response()->json(['error' => $e->getMessage()], 200);
-        }
-    }
-
-    public function webhookOriginal(Request $request)
-    {
-        $update = Telegram::getWebhookUpdate();
-
-        if ($update->getMessage()) {
-            $message = $update->getMessage();
             $text = $message->getText();
             $chatId = $message->getChat()->getId();
 
@@ -463,12 +361,33 @@ class ReportController extends Controller
                     $barberMessage .= "  - Incentive: $" . number_format($entry['incentive'], 2) . "\n";
                 }
                 $barberMessage .= "-----------------------\n";
-            }
 
-            // Send formatted message to Telegram
-            $this->sendToTelegram($barberMessage);
+                // Send formatted message to Telegram
+                $this->sendToTelegram($barberMessage);
+            }
         }
 
+        // Format the message to send to Telegram
+        // $message = "Weekly Sales Report\n\n";
+        // foreach ($result as $barberReport) {
+        //     $message .= "Barber: " . $barberReport['barber'] . "\n";
+        //     $message .= "Total Salary: $" . number_format($barberReport['total_salary'], 2) . "\n";
+        //     $message .= "---------------------------------\n";
+        //     foreach ($barberReport['services'] as $service) {
+        //         $message .= "Date: " . $service['date'] . "\n";
+        //         foreach ($service['entries'] as $entry) {
+        //             $message .= "Service: " . $entry['name'] . "\n";
+        //             $message .= "Gross Amount: $" . number_format($entry['gross_amount'], 2) . "\n";
+        //             $message .= "Incentive: $" . number_format($entry['incentive'], 2) . "\n";
+        //         }
+        //         $message .= "---------------------------------\n";
+        //     }
+        // }
+
+        // // Send the message to Telegram
+        // $this->sendToTelegram($message);
+
+        // Return response
         return response()->json($result);
     }
 
@@ -477,7 +396,7 @@ class ReportController extends Controller
     {
         // Your bot's API token and chat ID
         $botToken = "7769572088:AAFW5ulJXrRD7f8eYbnKofpypsDnUYNwjWo";  // Replace with your bot's token
-        $chatId = '-4942058217';      // Replace with your group's chat ID
+        $chatId = '-4764468184';      // Replace with your group's chat ID
 
         // Telegram API endpoint
         $url = "https://api.telegram.org/bot{$botToken}/sendMessage";
