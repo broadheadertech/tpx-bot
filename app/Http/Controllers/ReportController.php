@@ -99,6 +99,10 @@ class ReportController extends Controller
                 return response()->json('Bot message ignored', 200);
             }
 
+            if (strtolower($text) === 'generate-report') {
+                return $this->getWeeklySales($chatId); // pass chat ID to send Telegram message
+            }
+
             try {
                 $parsed = $this->parseMessage($text);
 
@@ -271,7 +275,7 @@ class ReportController extends Controller
     }
 
     // Modified
-    public function getWeeklySales()
+    public function getWeeklySales($chatId)
     {
         $startOfWeek = Carbon::now()->startOfWeek();
         $endOfWeek = Carbon::now()->endOfWeek();
@@ -363,8 +367,11 @@ class ReportController extends Controller
                 $barberMessage .= "-----------------------\n";
 
                 // Send formatted message to Telegram
-                $this->sendToTelegram($barberMessage);
+
             }
+
+            $chatIdSent = $chatId;
+            $this->sendToTelegram($barberMessage, $chatIdSent);
         }
 
         // Format the message to send to Telegram
@@ -392,11 +399,11 @@ class ReportController extends Controller
     }
 
 
-    public function sendToTelegram($message)
+    public function sendToTelegram($message, $chatId)
     {
         // Your bot's API token and chat ID
         $botToken = "7769572088:AAFW5ulJXrRD7f8eYbnKofpypsDnUYNwjWo";  // Replace with your bot's token
-        $chatId = '-4942058217';      // Replace with your group's chat ID
+        // $chatId = '-4942058217';      // Replace with your group's chat ID
 
         // Telegram API endpoint
         $url = "https://api.telegram.org/bot{$botToken}/sendMessage";
