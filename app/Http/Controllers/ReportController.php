@@ -237,11 +237,15 @@ class ReportController extends Controller
                     $serviceName = $serviceReports->first()->service->name ?? 'Unknown Service';
                     $incentive = $incentive + ($serviceReports->sum('amount') * $serviceReports->first()->service->percentage);
 
+                    if($barberRate > $incentive)
+                    {
+                        $incentive = $barberRate;
+                    }
                     $serviceEntries[] = [
                         'name' => $serviceName,
                         'count' => $serviceReports->count(),
                         'gross_amount' => $serviceReports->sum('amount'),
-                        'incentive' => $serviceReports->sum('amount') * $serviceReports->first()->service->percentage
+                        'incentive' => $incentive
                     ];
                 }
 
