@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AppscriptReport;
 use App\Models\Barber;
 use App\Models\Service;
+use App\Services\GoogleSheetService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -123,32 +124,18 @@ class ReportController extends Controller
                     throw new \Exception("Service not found: " . $service);
                 }
 
-                $slug = Str::random(6);
-
-                Report::create([
-                    'customer_no'   => $customer_no,
-                    'barber_id'     => $barberDetail->id,
-                    'service_id'    => $serviceDetail->id,
-                    'slug'          => $slug,
-                    'name'          => $name,
-                    'booking_type'  => $booking_type,
-                    'time'          => $time,
-                    'date'          => $date,
-                    'amount'        => $amount,
-                    'mop'           => $mop
-                ]);
-
-                AppscriptReport::create([
-                    'customer_no'   => $customer_no,
-                    'barber'        => $barberDetail->name,
-                    'service'       => $serviceDetail->name,
-                    'name'          => $name,
-                    'booking_type'  => $booking_type,
-                    'time'          => $time,
-                    'date'          => $date,
-                    'amount'        => $amount,
-                    'mop'           => $mop
-                ]);
+                $sheet = new GoogleSheetService();
+                $row = [
+                    $date,
+                    $customer_no,
+                    $name,
+                    $barber,
+                    $booking_type,
+                    $time,
+                    $service,
+                    $amount,
+                    $mop
+                ];
 
                 Telegram::sendMessage([
                     'chat_id' => $chatId,
@@ -419,5 +406,27 @@ class ReportController extends Controller
             Log::error('Telegram message failed: ' . $e->getMessage());
             return false;
         }
+    }
+
+    public function recordSale()
+    {
+        $sheet = new GoogleSheetService();
+
+        $row = [
+            now()->format('Y-m-d'),  // Booking Date
+            '123456',                // Customer No
+            'John Doe',              // Name
+            'Barber A',              // Barber
+            'Walk-in',               // Booking Type
+            '10:00 AM',              // Time
+            now()->format('Y-m-d'),  // Service Date
+            'Haircut',               // Service
+            280,                     // Amount
+            'CASH'                   // Mode of Payment
+        ];
+
+
+
+        return response()->json(['message' => 'Sale recorded successfully!']);
     }
 }
