@@ -138,6 +138,7 @@ class ReportController extends Controller
                 ];
 
                 $sheet->appendRow($row);
+
                 Telegram::sendMessage([
                     'chat_id' => $chatId,
                     'text' => '✅ Record Saved!',
@@ -420,7 +421,6 @@ class ReportController extends Controller
             'Barber A',              // Barber
             'Walk-in',               // Booking Type
             '10:00 AM',              // Time
-            now()->format('Y-m-d'),  // Service Date
             'Haircut',               // Service
             280,                     // Amount
             'CASH'                   // Mode of Payment
