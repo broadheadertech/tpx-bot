@@ -16,11 +16,14 @@ class GoogleSheetService
     {
         $this->spreadsheetId = env('GOOGLE_SHEET_ID'); // Set this in your .env
         $this->sheetName = 'Sales'; // Or whatever your sheet/tab name is
+        $credentialsJson = base64_decode(env('GOOGLE_SERVICE_ACCOUNT_BASE64'));
+
+        $credentialsArray = json_decode($credentialsJson, true);
 
         $client = new Client();
-        $client->setApplicationName('Laravel Google Sheets Integration');
+        $client->setApplicationName('Laravel Google Sheets Bot');
         $client->setScopes([Sheets::SPREADSHEETS]);
-        $client->setAuthConfig(storage_path('google/credentials.json'));
+        $client->setAuthConfig($credentialsArray);
         $client->setAccessType('offline');
 
         $this->service = new Sheets($client);
