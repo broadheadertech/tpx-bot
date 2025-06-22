@@ -11,7 +11,7 @@
 .env.production
 .phpactor.json
 .phpunit.result.cache
-/storage/google
+storage/google/credentials.json
 credentails.txt
 Homestead.json
 Homestead.yaml
