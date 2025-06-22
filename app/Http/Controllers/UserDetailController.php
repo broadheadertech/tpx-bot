@@ -13,7 +13,7 @@ class UserDetailController extends Controller
      */
     public function index()
     {
-        //
+        // '1'
     }
 
     /**
