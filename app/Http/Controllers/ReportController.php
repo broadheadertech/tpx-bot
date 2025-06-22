@@ -137,6 +137,7 @@ class ReportController extends Controller
                     $mop
                 ];
 
+                $sheet->appendRow($row);
                 Telegram::sendMessage([
                     'chat_id' => $chatId,
                     'text' => '✅ Record Saved!',
@@ -425,6 +426,7 @@ class ReportController extends Controller
             'CASH'                   // Mode of Payment
         ];
 
+        $sheet->appendRow($row);
 
 
         return response()->json(['message' => 'Sale recorded successfully!']);
