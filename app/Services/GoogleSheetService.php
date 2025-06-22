@@ -134,76 +134,69 @@ class GoogleSheetService
         return $response->getValues() ?? [];
     }
 
-    public function appendSummary(): void
-    {
-        $sheetName = $this->createWeeklySheetIfNotExists();
-        $range = $sheetName . '!A:J';
+   public function appendSummary(): void
+{
+    $sheetName = $this->createWeeklySheetIfNotExists();
+    $range = $sheetName . '!A:J';
 
-        // Get all rows
-        $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
-        $rows = collect($response->getValues() ?? []);
+    // Get all rows
+    $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
+    $rows = collect($response->getValues() ?? []);
 
-        if ($rows->count() < 2) return; // No data
+    if ($rows->count() < 2) return; // No data
 
-        $headers = $rows->first();
-        $data = $rows->skip(1);
+    $headers = $rows->first();
+    $data = $rows->skip(1);
 
-        $barberIndex = array_search('Barber', $headers);
-        $dateIndex   = array_search('Date', $headers);
-        $amountIndex = array_search('Amount', $headers);
+    $barberIndex = array_search('Barber', $headers);
+    $dateIndex   = array_search('Date', $headers);
+    $amountIndex = array_search('Amount', $headers);
 
-        if ($barberIndex === false || $dateIndex === false || $amountIndex === false) return;
+    if ($barberIndex === false || $dateIndex === false || $amountIndex === false) return;
 
-        $today = now()->format('Y-m-d');
+    $today = now()->format('Y-m-d');
 
-        $summary = [];
+    $summary = [];
 
-        foreach ($data as $row) {
-            $barber = $row[$barberIndex] ?? 'Unknown';
-            $date = $row[$dateIndex] ?? '';
-            $amount = isset($row[$amountIndex]) ? floatval($row[$amountIndex]) : 0;
+    foreach ($data as $row) {
+        $barber = $row[$barberIndex] ?? 'Unknown';
+        $date = $row[$dateIndex] ?? '';
+        $amount = isset($row[$amountIndex]) ? floatval($row[$amountIndex]) : 0;
 
+        if ($date === $today) {
             if (!isset($summary[$barber])) {
-                $summary[$barber] = [
-                    'daily' => 0,
-                    'weekly' => 0,
-                ];
+                $summary[$barber] = 0;
             }
-
-            if ($date === $today) {
-                $summary[$barber]['daily'] += $amount;
-            }
-
-            $summary[$barber]['weekly'] += $amount;
+            $summary[$barber] += $amount;
         }
-
-        // Prepare rows for summary
-        $values = [
-            ['Barber', 'Daily Total (' . $today . ')', 'Weekly Total'],
-        ];
-
-        foreach ($summary as $barber => $totals) {
-            $values[] = [
-                $barber,
-                number_format($totals['daily'], 2),
-                number_format($totals['weekly'], 2),
-            ];
-        }
-
-        $body = new Sheets\ValueRange([
-            'values' => $values,
-        ]);
-
-        // Place it on the right side of the sheet (columns L to N)
-        $summaryRange = $sheetName . '!L1:N' . (count($values) + 1);
-
-        $params = ['valueInputOption' => 'USER_ENTERED'];
-
-        $this->service->spreadsheets_values->update(
-            $this->spreadsheetId,
-            $summaryRange,
-            $body,
-            $params
-        );
     }
+
+    // Prepare rows for summary
+    $values = [
+        ['Barber', 'Daily Total (' . $today . ')'],
+    ];
+
+    foreach ($summary as $barber => $dailyTotal) {
+        $values[] = [
+            $barber,
+            number_format($dailyTotal, 2),
+        ];
+    }
+
+    $body = new Sheets\ValueRange([
+        'values' => $values,
+    ]);
+
+    // Place summary on the right side of the sheet (columns L:M)
+    $summaryRange = $sheetName . '!L1:M' . (count($values) + 1);
+
+    $params = ['valueInputOption' => 'USER_ENTERED'];
+
+    $this->service->spreadsheets_values->update(
+        $this->spreadsheetId,
+        $summaryRange,
+        $body,
+        $params
+    );
 }
+
