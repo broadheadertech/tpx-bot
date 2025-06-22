@@ -139,57 +139,74 @@ class GoogleSheetService
         $sheetName = $this->createWeeklySheetIfNotExists();
         $range = $sheetName . '!A:J';
 
-        // Get all rows
         $response = $this->service->spreadsheets_values->get($this->spreadsheetId, $range);
         $rows = collect($response->getValues() ?? []);
 
-        if ($rows->count() < 2) return; // No data
+        if ($rows->count() < 2) return;
 
         $headers = $rows->first();
         $data = $rows->skip(1);
 
-        $barberIndex = array_search('Barber', $headers);
-        $dateIndex   = array_search('Date', $headers);
-        $amountIndex = array_search('Amount', $headers);
+        $barberIndex  = array_search('Barber', $headers);
+        $dateIndex    = array_search('Date', $headers);
+        $amountIndex  = array_search('Amount', $headers);
+        $serviceIndex = array_search('Service', $headers);
 
-        if ($barberIndex === false || $dateIndex === false || $amountIndex === false) return;
+        if ($barberIndex === false || $dateIndex === false || $amountIndex === false || $serviceIndex === false) {
+            return;
+        }
 
         $today = now()->format('Y-m-d');
+        $commissionRate = 0.10;
 
         $summary = [];
 
         foreach ($data as $row) {
-            $barber = $row[$barberIndex] ?? 'Unknown';
             $date = $row[$dateIndex] ?? '';
+            if ($date !== $today) continue;
+
+            $barber = $row[$barberIndex] ?? 'Unknown';
+            $service = $row[$serviceIndex] ?? 'Unknown Service';
             $amount = isset($row[$amountIndex]) ? floatval($row[$amountIndex]) : 0;
 
-            if ($date === $today) {
-                if (!isset($summary[$barber])) {
-                    $summary[$barber] = 0;
-                }
-                $summary[$barber] += $amount;
+            if (!isset($summary[$barber])) {
+                $summary[$barber] = [];
             }
+
+            if (!isset($summary[$barber][$service])) {
+                $summary[$barber][$service] = 0;
+            }
+
+            $summary[$barber][$service] += $amount;
         }
 
-        // Prepare rows for summary
-        $values = [
-            ['Barber', 'Daily Total (' . $today . ')'],
-        ];
+        // Prepare rows
+        $values = [];
 
-        foreach ($summary as $barber => $dailyTotal) {
-            $values[] = [
-                $barber,
-                number_format($dailyTotal, 2),
-            ];
+        foreach ($summary as $barber => $services) {
+            $values[] = ['Barber'];
+            $values[] = [$barber];
+            $values[] = ['Service', 'Total Amount', 'Commission'];
+
+            foreach ($services as $service => $total) {
+                $commission = $total * $commissionRate;
+                $values[] = [
+                    $service,
+                    number_format($total, 2),
+                    number_format($commission, 2)
+                ];
+            }
+
+            // Blank row between barbers
+            $values[] = [''];
         }
 
         $body = new Sheets\ValueRange([
             'values' => $values,
         ]);
 
-        // Place summary on the right side of the sheet (columns L:M)
-        $summaryRange = $sheetName . '!L1:M' . (count($values) + 1);
-
+        // Paste starting from column L
+        $summaryRange = $sheetName . '!L1';
         $params = ['valueInputOption' => 'USER_ENTERED'];
 
         $this->service->spreadsheets_values->update(
