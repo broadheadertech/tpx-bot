@@ -418,7 +418,7 @@ class ReportController extends Controller
             now()->format('Y-m-d'),  // Booking Date
             '123456',                // Customer No
             'John Doe',              // Name
-            'Barber B',              // Barber
+            'Barber A',              // Barber
             'Walk-in',               // Booking Type
             '10:00 AM',              // Time
             'signature',               // Service
