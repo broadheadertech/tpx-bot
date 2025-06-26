@@ -149,23 +149,16 @@ class GoogleSheetService
         $data = $rows->skip(1);
 
         $barberIndex  = array_search('Barber', $headers);
-        $dateIndex    = array_search('Date', $headers);
         $amountIndex  = array_search('Amount', $headers);
         $serviceIndex = array_search('Service', $headers);
 
-        if ($barberIndex === false || $dateIndex === false || $amountIndex === false || $serviceIndex === false) {
+        if ($barberIndex === false || $amountIndex === false || $serviceIndex === false) {
             return;
         }
 
-        $today = now()->format('Y-m-d');
         $summary = [];
 
         foreach ($data as $row) {
-            $rawDate = $row[$dateIndex] ?? '';
-            $parsedDate = \Carbon\Carbon::parse($rawDate)->format('Y-m-d');
-
-            if ($parsedDate !== $today) continue;
-
             $barber = trim($row[$barberIndex] ?? 'Unknown');
             $serviceName = trim($row[$serviceIndex] ?? 'Unknown Service');
             $amount = isset($row[$amountIndex]) ? floatval($row[$amountIndex]) : 0;
@@ -191,12 +184,12 @@ class GoogleSheetService
         $values = [];
 
         if (empty($summary)) {
-            $values[] = ['No data found for ' . $today];
+            $values[] = ['No data found'];
         }
 
         foreach ($summary as $barber => $services) {
             $values[] = ['Barber'];
-            $values[] = [$barber . ' - ' . $today];
+            $values[] = [$barber . ' - All Dates'];
             $values[] = ['Service', 'Total Amount', 'Commission'];
 
             foreach ($services as $service => $totals) {
